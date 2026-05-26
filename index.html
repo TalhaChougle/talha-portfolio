@@ -1556,27 +1556,22 @@ function buildSafeDial(cfg){
     const mediaContainer = g(mediaId);
     if(mediaContainer) {
         // Fallback to github link for screenshot if no demo/certLink is provided
-        const link = p.demo || p.certLink || p.github; 
-        
-        // Build the buttons for the hover overlay
+        const link = p.demo || p.certLink || p.github;
+        const driveId = link && link.includes('drive.google.com/file/d/') ? (link.match(/\/d\/([^/]+)/)||[])[1] : null;
         let overlayBtns = '';
         if(p.demo || p.certLink) overlayBtns += `<a href="${p.demo || p.certLink}" target="_blank" class="sdw-btn" style="text-decoration:none;display:inline-flex;align-items:center;background:rgba(0,255,157,0.12);border-color:rgba(0,255,157,0.4);color:var(--green);box-shadow:0 4px 20px rgba(0,255,157,0.15);"><span style="margin-right:6px">↗</span> ${p.certLink ? 'Open Certificate' : 'Open Link'}</a>`;
         if(p.github) overlayBtns += `<a href="${p.github}" target="_blank" class="sdw-btn" style="text-decoration:none;display:inline-flex;align-items:center;"><span style="margin-right:6px">↗</span> GitHub</a>`;
-        
         const overlayHTML = overlayBtns ? `<div class="sdw-media-overlay">${overlayBtns}</div>` : '';
-        
-        mediaContainer.style.display = 'block'; // ALWAYS show
-        if(link) {
+        mediaContainer.style.display = 'block';
+        if(driveId) {
+            mediaContainer.innerHTML = `<iframe src="https://drive.google.com/file/d/${driveId}/preview" style="position:absolute;inset:0;width:100%;height:100%;border:none;z-index:1;" allow="autoplay" loading="lazy"></iframe>` + overlayHTML;
+        } else if(link) {
             if(link.match(/\.(jpeg|jpg|gif|png|webp)$/i) || link.startsWith('data:image')) {
-                mediaContainer.innerHTML = `<img src="${encodeURI(link)}" alt="Preview" style="object-fit:contain;" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\\'display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);font-family:monospace;font-size:12px;text-align:center;padding:20px;background:rgba(0,0,0,0.4);\\'><span>⚠️ Local Image Not Found</span><span style=\\'margin-top:8px;color:#888;font-size:10px\\'>Make sure <b>${link}</b> is saved in the exact same folder as your HTML file.</span></div>';"/>` + overlayHTML;
-            } else if(link.match(/\.pdf$/i) || link.startsWith('blob:')) {
-                mediaContainer.innerHTML = `<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;background:rgba(0,0,0,0.4);'>
-                  <span style='font-size:2.5rem'>📄</span>
-                  <span style='font-family:monospace;font-size:0.75rem;color:var(--text3);text-align:center;padding:0 20px'>${p.name || 'Certificate'}</span>
-                  <a href='${link}' target='_blank' class='sdw-btn' style='text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:rgba(0,229,255,0.1);border-color:rgba(0,229,255,0.4);color:var(--cyan);'>↗ Open Certificate</a>
-                </div>`;
+                mediaContainer.innerHTML = `<img src="${encodeURI(link)}" alt="Preview" style="object-fit:contain;" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\'display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-family:monospace;font-size:12px;background:rgba(0,0,0,0.4);padding:20px;text-align:center\'>Image not found</div>';"/>` + overlayHTML;
+            } else if(link.match(/\.pdf$/i)) {
+                mediaContainer.innerHTML = `<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;background:rgba(0,0,0,0.4);'><span style='font-size:2.5rem'>📄</span><span style='font-family:monospace;font-size:0.75rem;color:var(--text3);text-align:center;padding:0 20px'>${p.name||'Certificate'}</span><a href='${link}' target='_blank' class='sdw-btn' style='text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:rgba(0,229,255,0.1);border-color:rgba(0,229,255,0.4);color:var(--cyan);'>↗ Open Certificate</a></div>`;
             } else {
-                mediaContainer.innerHTML = `<img src="https://image.thum.io/get/width/800/crop/800/noanimate/${link}" alt="Live Preview" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\\'display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-family:monospace;font-size:12px;background:rgba(0,0,0,0.4);\\'>Interactive preview unavailable. Click link below.</div>';"/>` + overlayHTML;
+                mediaContainer.innerHTML = `<img src="https://image.thum.io/get/width/800/crop/800/noanimate/${link}" alt="Preview" onerror="this.onerror=null;this.parentElement.innerHTML='<div style=\'display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-family:monospace;font-size:12px;background:rgba(0,0,0,0.4)\'>Preview unavailable</div>';"/>` + overlayHTML;
             }
         } else {
             mediaContainer.innerHTML = `<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);font-family:monospace;font-size:12px;text-align:center;padding:20px;background:rgba(0,0,0,0.4);'><span>🖼️ No Preview Available</span><span style='margin-top:8px;color:#888;font-size:10px'>Add a demo URL, GitHub repo, or image link to enable previews.</span></div>` + overlayHTML;
@@ -2893,61 +2888,146 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
 });
 
 
-/* ═══════════════════════════════════════════════
-   ██████  GITHUB CERT SYNC SYSTEM  ██████
+/* ══════════════════════════════════════════════
+   ██████  GOOGLE DRIVE AUTO-SYNC SYSTEM  ██████
 ══════════════════════════════════════════════ */
-const GH_RAW = 'https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main';
-const GH_API = 'https://api.github.com/repos/TalhaChougle/portfolio-certs/contents/';
-const GH_FOLDERS = {badges:'badges',courses:'courses',events:'events',hackathons:'hackathons',ctfs:'ctfs',tryhackme:'tryhackme'};
-const GH_MANIFEST = {
-  certs: {
-    "AoC 2025": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/badges/Advent%20of%20Cyber%202025%28Badge%29.png",
-    "Ethical Hacker": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/badges/Cisco%20ethical%20hacker%20badge%20%281%29.jpg",
-    "Jr Analyst": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/badges/CyberSecurity%20Essentials%28Badge%29%20%281%29.jpg",
-    "Intro to Cyber": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/badges/introduction-to-cybersecurity%20%281%29.png",
-    "Packet Tracer": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/badges/Packet%20Tracer%28Achievement%29%20%281%29.png",
-    "Google Cyber": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/courses/Google%20cybersecurity%281%29%20%281%29.pdf",
-    "Cloud Cyber": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/courses/Google%20cloud%20cybersecurity%281%29%20%281%29.pdf",
-    "GenAI": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/courses/Prompt%20Engineering%281%29%20%281%29.pdf",
-    "Cisco Jr.": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/courses/Junior_Cybersecurity_Analyst_Career_Path_certificate_tchougle60-gmail-com_4d07a2a8...pdf",
-    "NEOFuture": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/hackathons/47c51269-8cf2-42fc-9d51-07bebb312fb7.pdf",
-    "Hacks4Insights": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/hackathons/Chougle%20Talha.pdf",
-    "MumbaiHacks": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/hackathons/Chougle%20Talha_Certificate.pdf",
-    "GenAI Build": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/hackathons/GenAi%20certificate.pdf",
-    "NextEdge": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/hackathons/Screenshot_20250825_162408_WPS%20Office.jpg",
-    "Techathon'35": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/hackathons/Techathon%28Vasai%29.jpg",
-    "CHWCTF 2026": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/ctfs/Chougle%20Talha%20Zahoor%20Ahmed%20CHWCTF2026A086.pdf",
-    "Talha CTF": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/ctfs/Talha_Zahoor_Ahmed_Chougle.jpg",
-    "NLP Seminar": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/events/NLP%20seminar.jpeg",
-    "National Event": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/events/Chougle_Talha_Zahoor_Ahmed_Certificate.pdf"
-  },
-  internship: {
-    "Cybersecurity Intern": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/internship-certificates/Internship%20Certf-83%2021.pdf",
-    "Security Analyst Intern": "https://raw.githubusercontent.com/TalhaChougle/portfolio-certs/main/internship-certificates/STSL%20Intership%20COP%20-Chougle%20Talha%20Zahoor%20Ahmed.pdf"
-  }
+// Root folder ID from https://drive.google.com/drive/folders/1CiN8YD2ji0oAcczY33nm7iy-M9b1gPUZ
+const GD_ROOT = '1CiN8YD2ji0oAcczY33nm7iy-M9b1gPUZ';
+const GD_API  = 'https://www.googleapis.com/drive/v3/files';
+// Public API key — read-only, safe to expose, only works on public folders
+const GD_KEY  = 'AIzaSyD-9tSrke72PkioaB-LlNt_9fXoFZVmhvk';
+
+// Maps portfolio category → Google Drive subfolder name
+const GD_FOLDER_NAMES = {
+  badges:                  'badges',
+  courses:                 'courses',
+  ctfs:                    'ctfs',
+  events:                  'events',
+  hackathons:              'hackathons',
+  tryhackme:               'tryhackme',
+  'internship-certificates':'internship-certificates'
 };
-function applyManifest(m){let n=0;if(m.certs)CERTS_DATA.forEach(c=>{const u=m.certs[c.name];if(u&&u!==c.certLink){c.certLink=u;n++;}});if(m.internship)EXP.forEach(e=>{const u=m.internship[e.title];if(u&&u!==e.certLink){e.certLink=u;n++;}});return n;}
-function slugify(s){return s.toLowerCase().replace(/[^a-z0-9]/g,'');}
-function bestMatch(name,files){const s=slugify(name);return files.find(f=>slugify(f.name.replace(/\.[^.]+$/,''))===s)||files.find(f=>slugify(f.name).includes(s))||files.find(f=>s.includes(slugify(f.name.replace(/\.[^.]+$/,''))));}
-async function scanFolder(path){try{const r=await fetch(GH_API+path,{headers:{Accept:'application/vnd.github.v3+json'},cache:'no-cache'});if(!r.ok)return[];const d=await r.json();return Array.isArray(d)?d.filter(f=>f.type==='file'&&f.name!=='.gitkeep'):[];}catch(e){return[];}}
-async function syncCertsFromGitHub(){
-  const badge=document.getElementById('gh-sync-badge');
-  const setBadge=(t,c)=>{if(!badge)return;badge.textContent=t;badge.style.color=c;badge.style.opacity='1';};
-  setBadge('Syncing...','var(--amber)');
-  let updated=applyManifest(GH_MANIFEST);
-  if(window.location.protocol==='https:'){
-    for(const[cat,folder]of Object.entries(GH_FOLDERS)){
-      const files=await scanFolder(folder);
-      CERTS_DATA.forEach(cert=>{if(cert.category!==cat)return;const hit=bestMatch(cert.name,files);if(hit&&hit.download_url!==cert.certLink){cert.certLink=hit.download_url;updated++;}});
-    }
-    const ifiles=await scanFolder('internship-certificates');
-    EXP.forEach(exp=>{const kw=exp.org?exp.org.split('—')[0].trim().split(' ')[0].toLowerCase():'';const hit=ifiles.find(f=>f.name.toLowerCase().includes(kw))||bestMatch(exp.title,ifiles);if(hit&&hit.download_url!==exp.certLink){exp.certLink=hit.download_url;updated++;}});
-  }
-  if(updated>0){renderResume();const fc=currentCertCat==='all'?[...CERTS_DATA]:CERTS_DATA.filter(c=>c.category===currentCertCat);certDial.switchData(fc,()=>{});}
-  const linked=CERTS_DATA.filter(c=>c.certLink&&c.certLink.startsWith('http')).length;
-  setBadge(linked+'/'+CERTS_DATA.length+' linked',linked===CERTS_DATA.length?'var(--green)':'var(--amber)');
-  setTimeout(()=>{if(badge)badge.style.opacity='0';},5000);
+
+// Cache subfolder IDs after first fetch
+const GD_FOLDER_IDS = {};
+
+function gdFileUrl(fileId) {
+  return 'https://drive.google.com/file/d/'+fileId+'/view';
 }
+function gdDirectUrl(fileId) {
+  return 'https://drive.google.com/uc?export=view&id='+fileId;
+}
+function gdPreviewUrl(fileId) {
+  return 'https://drive.google.com/file/d/'+fileId+'/preview';
+}
+
+function slugify(s){ return s.toLowerCase().replace(/[^a-z0-9]/g,''); }
+function bestMatch(name, files){
+  const s = slugify(name);
+  return files.find(f=>slugify(f.name.replace(/\.[^.]+$/,''))===s)
+      || files.find(f=>slugify(f.name).includes(s))
+      || files.find(f=>s.includes(slugify(f.name.replace(/\.[^.]+$/,''))));
+}
+
+async function gdFetch(params){
+  try {
+    const qs = Object.entries({...params, key: GD_KEY}).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+    const r = await fetch(GD_API+'?'+qs, {cache:'no-cache'});
+    if(!r.ok) return null;
+    return await r.json();
+  } catch(e){ return null; }
+}
+
+async function getSubfolderIds(){
+  // Fetch all subfolders inside root in one call
+  const data = await gdFetch({
+    q: "'"+GD_ROOT+"' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false",
+    fields: 'files(id,name)',
+    pageSize: '50'
+  });
+  if(!data || !data.files) return;
+  data.files.forEach(f => {
+    const key = Object.keys(GD_FOLDER_NAMES).find(k => GD_FOLDER_NAMES[k].toLowerCase() === f.name.toLowerCase());
+    if(key) GD_FOLDER_IDS[key] = f.id;
+  });
+}
+
+async function getFilesInFolder(folderId){
+  const data = await gdFetch({
+    q: "'"+folderId+"' in parents and trashed=false",
+    fields: 'files(id,name,mimeType)',
+    pageSize: '100'
+  });
+  return (data && data.files) ? data.files : [];
+}
+
+function applyDriveFiles(cat, files){
+  let n = 0;
+  CERTS_DATA.forEach(cert => {
+    if(cert.category !== cat) return;
+    const hit = bestMatch(cert.name, files);
+    if(hit){
+      const url = gdFileUrl(hit.id);
+      if(url !== cert.certLink){ cert.certLink = url; cert._driveId = hit.id; cert._driveMime = hit.mimeType; n++; }
+    }
+  });
+  return n;
+}
+
+function applyInternFiles(files){
+  let n = 0;
+  EXP.forEach(exp => {
+    const kw = exp.org ? exp.org.split('\u2014')[0].trim().split(' ')[0].toLowerCase() : '';
+    const hit = files.find(f=>f.name.toLowerCase().includes(kw)) || bestMatch(exp.title, files);
+    if(hit){
+      const url = gdFileUrl(hit.id);
+      if(url !== exp.certLink){ exp.certLink = url; n++; }
+    }
+  });
+  return n;
+}
+
+async function syncCertsFromGitHub(){
+  const badge = document.getElementById('gh-sync-badge');
+  const setBadge = (t,c) => { if(!badge)return; badge.textContent=t; badge.style.color=c; badge.style.opacity='1'; };
+  setBadge('Syncing from Drive...','var(--amber)');
+
+  // Step 1: get subfolder IDs
+  await getSubfolderIds();
+
+  if(Object.keys(GD_FOLDER_IDS).length === 0){
+    setBadge('\u26a0 Drive folder not accessible','var(--text3)');
+    setTimeout(()=>{ if(badge) badge.style.opacity='0'; },5000);
+    return;
+  }
+
+  // Step 2: scan each category folder
+  let updated = 0;
+  for(const [cat, folderId] of Object.entries(GD_FOLDER_IDS)){
+    if(cat === 'internship-certificates') continue;
+    const files = await getFilesInFolder(folderId);
+    updated += applyDriveFiles(cat, files);
+  }
+
+  // Step 3: scan internship folder
+  if(GD_FOLDER_IDS['internship-certificates']){
+    const files = await getFilesInFolder(GD_FOLDER_IDS['internship-certificates']);
+    updated += applyInternFiles(files);
+  }
+
+  // Step 4: re-render
+  if(updated > 0){
+    renderResume();
+    const fc = currentCertCat==='all' ? [...CERTS_DATA] : CERTS_DATA.filter(c=>c.category===currentCertCat);
+    certDial.switchData(fc, ()=>{});
+  }
+
+  const linked = CERTS_DATA.filter(c=>c.certLink&&c.certLink.startsWith('http')).length;
+  setBadge(linked+'/'+CERTS_DATA.length+' certs synced from Drive', linked>0?'var(--green)':'var(--amber)');
+  setTimeout(()=>{ if(badge) badge.style.opacity='0'; },6000);
+}
+
+// Auto-run on every page load
 window.addEventListener('load', ()=>setTimeout(syncCertsFromGitHub, 1500));
 </script>
 </body>
