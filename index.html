@@ -2891,35 +2891,16 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
 /* ══════════════════════════════════════════════
    ██████  GOOGLE DRIVE AUTO-SYNC SYSTEM  ██████
 ══════════════════════════════════════════════ */
-// Root folder ID from https://drive.google.com/drive/folders/1CiN8YD2ji0oAcczY33nm7iy-M9b1gPUZ
-const GD_ROOT = '1CiN8YD2ji0oAcczY33nm7iy-M9b1gPUZ';
-const GD_API  = 'https://www.googleapis.com/drive/v3/files';
-// Public API key — read-only, safe to expose, only works on public folders
-const GD_KEY  = 'AIzaSyD-9tSrke72PkioaB-LlNt_9fXoFZVmhvk';
-
-// Maps portfolio category → Google Drive subfolder name
-const GD_FOLDER_NAMES = {
-  badges:                  'badges',
-  courses:                 'courses',
-  ctfs:                    'ctfs',
-  events:                  'events',
-  hackathons:              'hackathons',
-  tryhackme:               'tryhackme',
-  'internship-certificates':'internship-certificates'
+// Folder IDs are permanent — files inside are fetched live on every page load
+const GD_FOLDERS = {
+  badges:                   '1RmIERRTLi65kt5d3vtjLLVefJcm-4Pxe',
+  courses:                  '1EIT4Obz3Wbpf148Ew84w5xGexjALO6A0',
+  ctfs:                     '1kW8KfAw17atUaF4d99MDXMINBCoK6QHV',
+  events:                   '1e9oLw0vGNs0PTuzyg73oicnTNTd2qvQF',
+  hackathons:               '1mbDf3O87foo85HIloNjHN5n36GMaAh4c',
+  tryhackme:                '1yLrG5ohYGks54YjyjrE6yxQLHcA9jysa',
+  'internship-certificates':'1IFOxSPpO2BPcITMtOxpZjV9BdrZSGKqe'
 };
-
-// Cache subfolder IDs after first fetch
-const GD_FOLDER_IDS = {};
-
-function gdFileUrl(fileId) {
-  return 'https://drive.google.com/file/d/'+fileId+'/view';
-}
-function gdDirectUrl(fileId) {
-  return 'https://drive.google.com/uc?export=view&id='+fileId;
-}
-function gdPreviewUrl(fileId) {
-  return 'https://drive.google.com/file/d/'+fileId+'/preview';
-}
 
 function slugify(s){ return s.toLowerCase().replace(/[^a-z0-9]/g,''); }
 function bestMatch(name, files){
@@ -2928,63 +2909,29 @@ function bestMatch(name, files){
       || files.find(f=>slugify(f.name).includes(s))
       || files.find(f=>s.includes(slugify(f.name.replace(/\.[^.]+$/,''))));
 }
+function gdViewUrl(id){ return 'https://drive.google.com/file/d/'+id+'/view'; }
 
-async function gdFetch(params){
-  try {
-    const qs = Object.entries({...params, key: GD_KEY}).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
-    const r = await fetch(GD_API+'?'+qs, {cache:'no-cache'});
-    if(!r.ok) return null;
-    return await r.json();
-  } catch(e){ return null; }
-}
-
-async function getSubfolderIds(){
-  // Fetch all subfolders inside root in one call
-  const data = await gdFetch({
-    q: "'"+GD_ROOT+"' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false",
-    fields: 'files(id,name)',
-    pageSize: '50'
-  });
-  if(!data || !data.files) return;
-  data.files.forEach(f => {
-    const key = Object.keys(GD_FOLDER_NAMES).find(k => GD_FOLDER_NAMES[k].toLowerCase() === f.name.toLowerCase());
-    if(key) GD_FOLDER_IDS[key] = f.id;
-  });
-}
-
-async function getFilesInFolder(folderId){
-  const data = await gdFetch({
-    q: "'"+folderId+"' in parents and trashed=false",
-    fields: 'files(id,name,mimeType)',
-    pageSize: '100'
-  });
-  return (data && data.files) ? data.files : [];
-}
-
-function applyDriveFiles(cat, files){
-  let n = 0;
-  CERTS_DATA.forEach(cert => {
-    if(cert.category !== cat) return;
-    const hit = bestMatch(cert.name, files);
-    if(hit){
-      const url = gdFileUrl(hit.id);
-      if(url !== cert.certLink){ cert.certLink = url; cert._driveId = hit.id; cert._driveMime = hit.mimeType; n++; }
-    }
-  });
-  return n;
-}
-
-function applyInternFiles(files){
-  let n = 0;
-  EXP.forEach(exp => {
-    const kw = exp.org ? exp.org.split('\u2014')[0].trim().split(' ')[0].toLowerCase() : '';
-    const hit = files.find(f=>f.name.toLowerCase().includes(kw)) || bestMatch(exp.title, files);
-    if(hit){
-      const url = gdFileUrl(hit.id);
-      if(url !== exp.certLink){ exp.certLink = url; n++; }
-    }
-  });
-  return n;
+async function fetchDriveFolder(folderId){
+  const apiUrl = 'https://www.googleapis.com/drive/v3/files'
+    +'?q=%27'+folderId+'%27+in+parents+and+trashed%3Dfalse'
+    +'&fields=files(id,name,mimeType)'
+    +'&pageSize=100'
+    +'&key=AIzaSyBA_GJLpe7SDRX-O6O_riKXAqGQtNxFGmg';
+  const proxies = [
+    'https://api.allorigins.win/get?url='+encodeURIComponent(apiUrl),
+    'https://corsproxy.io/?'+encodeURIComponent(apiUrl)
+  ];
+  for(const proxy of proxies){
+    try{
+      const r = await fetch(proxy, {cache:'no-cache'});
+      if(!r.ok) continue;
+      const wrapper = await r.json();
+      const raw = wrapper.contents || wrapper;
+      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if(data && data.files) return data.files;
+    }catch(e){ continue; }
+  }
+  return [];
 }
 
 async function syncCertsFromGitHub(){
@@ -2992,42 +2939,40 @@ async function syncCertsFromGitHub(){
   const setBadge = (t,c) => { if(!badge)return; badge.textContent=t; badge.style.color=c; badge.style.opacity='1'; };
   setBadge('Syncing from Drive...','var(--amber)');
 
-  // Step 1: get subfolder IDs
-  await getSubfolderIds();
+  let updated = 0, totalFound = 0;
 
-  if(Object.keys(GD_FOLDER_IDS).length === 0){
-    setBadge('\u26a0 Drive folder not accessible','var(--text3)');
-    setTimeout(()=>{ if(badge) badge.style.opacity='0'; },5000);
-    return;
+  for(const [cat, folderId] of Object.entries(GD_FOLDERS)){
+    const files = await fetchDriveFolder(folderId);
+    totalFound += files.length;
+    if(cat === 'internship-certificates'){
+      EXP.forEach(exp => {
+        const kw = exp.org ? exp.org.split('\u2014')[0].trim().split(' ')[0].toLowerCase() : '';
+        const hit = files.find(f=>f.name.toLowerCase().includes(kw)) || bestMatch(exp.title, files);
+        if(hit){ const u=gdViewUrl(hit.id); if(u!==exp.certLink){exp.certLink=u;updated++;} }
+      });
+    } else {
+      CERTS_DATA.forEach(cert => {
+        if(cert.category !== cat) return;
+        const hit = bestMatch(cert.name, files);
+        if(hit){ const u=gdViewUrl(hit.id); if(u!==cert.certLink){cert.certLink=u;updated++;} }
+      });
+    }
   }
 
-  // Step 2: scan each category folder
-  let updated = 0;
-  for(const [cat, folderId] of Object.entries(GD_FOLDER_IDS)){
-    if(cat === 'internship-certificates') continue;
-    const files = await getFilesInFolder(folderId);
-    updated += applyDriveFiles(cat, files);
-  }
-
-  // Step 3: scan internship folder
-  if(GD_FOLDER_IDS['internship-certificates']){
-    const files = await getFilesInFolder(GD_FOLDER_IDS['internship-certificates']);
-    updated += applyInternFiles(files);
-  }
-
-  // Step 4: re-render
   if(updated > 0){
     renderResume();
-    const fc = currentCertCat==='all' ? [...CERTS_DATA] : CERTS_DATA.filter(c=>c.category===currentCertCat);
-    certDial.switchData(fc, ()=>{});
+    const fc = currentCertCat==='all'?[...CERTS_DATA]:CERTS_DATA.filter(c=>c.category===currentCertCat);
+    certDial.switchData(fc,()=>{});
   }
 
   const linked = CERTS_DATA.filter(c=>c.certLink&&c.certLink.startsWith('http')).length;
-  setBadge(linked+'/'+CERTS_DATA.length+' certs synced from Drive', linked>0?'var(--green)':'var(--amber)');
+  setBadge(
+    totalFound===0 ? '⚠ Drive unreachable' : linked+'/'+CERTS_DATA.length+' certs synced from Drive',
+    totalFound===0 ? 'var(--text3)' : linked>0 ? 'var(--green)' : 'var(--amber)'
+  );
   setTimeout(()=>{ if(badge) badge.style.opacity='0'; },6000);
 }
 
-// Auto-run on every page load
 window.addEventListener('load', ()=>setTimeout(syncCertsFromGitHub, 1500));
 </script>
 </body>
