@@ -919,7 +919,7 @@ footer{position:relative;z-index:1;padding:28px 8vw;border-top:1px solid var(--b
     <div class="adm-ps" style="color:var(--amber)">Welcome, Talha</div>
     <div style="margin-top:8px;padding:7px 10px;border-radius:8px;background:rgba(0,255,157,0.06);border:1px solid rgba(0,255,157,0.2);display:flex;align-items:center;gap:8px">
       <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0"></span>
-      <span style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--green);letter-spacing:0.5px;line-height:1.4">Connected to GitHub<br><span style="color:var(--text3);font-size:0.55rem">TalhaChougle/portfolio-certs</span></span>
+      <span style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--green);letter-spacing:0.5px;line-height:1.4">Connected to Google Drive<br><span style="color:var(--text3);font-size:0.55rem">Portfolio-certs folder</span></span>
     </div>
   </div>
   <div class="adm-pb">
@@ -2912,24 +2912,30 @@ function bestMatch(name, files){
 function gdViewUrl(id){ return 'https://drive.google.com/file/d/'+id+'/view'; }
 
 async function fetchDriveFolder(folderId){
+  // Try direct API first (works on https), then proxies as fallback
   const apiUrl = 'https://www.googleapis.com/drive/v3/files'
     +'?q=%27'+folderId+'%27+in+parents+and+trashed%3Dfalse'
     +'&fields=files(id,name,mimeType)'
     +'&pageSize=100'
     +'&key=AIzaSyBA_GJLpe7SDRX-O6O_riKXAqGQtNxFGmg';
   const proxies = [
+    apiUrl,  // direct (works on hosted pages without CORS issues for public data)
     'https://api.allorigins.win/get?url='+encodeURIComponent(apiUrl),
     'https://corsproxy.io/?'+encodeURIComponent(apiUrl)
   ];
   for(const proxy of proxies){
     try{
       const r = await fetch(proxy, {cache:'no-cache'});
-      if(!r.ok) continue;
+      if(!r.ok){ console.warn('[Drive] '+proxy.slice(0,60)+' → HTTP '+r.status); continue; }
       const wrapper = await r.json();
       const raw = wrapper.contents || wrapper;
       const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      if(data && data.files) return data.files;
-    }catch(e){ continue; }
+      if(data && data.files){
+        console.log('[Drive] folder '+folderId+' → '+data.files.length+' files via '+proxy.slice(0,50));
+        return data.files;
+      }
+      if(data && data.error){ console.warn('[Drive] API error:', data.error.message); }
+    }catch(e){ console.warn('[Drive] fetch failed:', e.message); continue; }
   }
   return [];
 }
