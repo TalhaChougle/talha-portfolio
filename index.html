@@ -933,7 +933,7 @@ footer{position:relative;z-index:1;padding:28px 8vw;border-top:1px solid var(--b
     <button class="adm-btn" onclick="openAdminManager('edu')"><span class="adm-bico">🎓</span>Education</button>
     <div class="adm-div"></div>
     <div class="adm-div"></div>
-    <div class="adm-gl">GitHub Sync</div>
+    <div class="adm-gl">Drive Sync</div>
     <button class="adm-btn" onclick="syncCertsFromGitHub()"><span class="adm-bico">↻</span>Re-sync Now</button>
     <div class="adm-div"></div>
     <div class="adm-gl">Session</div>
@@ -2917,7 +2917,7 @@ async function fetchDriveFolder(folderId){
     +'?q=%27'+folderId+'%27+in+parents+and+trashed%3Dfalse'
     +'&fields=files(id,name,mimeType)'
     +'&pageSize=100'
-    +'&key=AIzaSyBA_GJLpe7SDRX-O6O_riKXAqGQtNxFGmg';
+    +'&key=AIzaSyBidu-ZsHvX6eZ98QDrT3jG9GCbj-0kn4M';
   const proxies = [
     apiUrl,  // direct (works on hosted pages without CORS issues for public data)
     'https://api.allorigins.win/get?url='+encodeURIComponent(apiUrl),
