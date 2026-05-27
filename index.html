@@ -822,19 +822,17 @@ footer{position:relative;z-index:1;padding:28px 8vw;border-top:1px solid var(--b
         <div style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--amber);letter-spacing:3px;margin-bottom:6px">CURRICULUM VITAE</div>
         <div style="font-size:.9rem;color:var(--text2)">Full experience, education, and skills in one document.</div>
       </div>
-      <a href="resume.pdf" download="Talha_Chougle_Resume.pdf" class="resume-dl" style="text-decoration:none;">
+      <a id="resume-dl-btn" href="https://drive.google.com/drive/folders/1SKguVAvLwpGJgPFyTy26dbiVepIHwxMx" target="_blank" class="resume-dl" style="text-decoration:none;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Download CV
       </a>
     </div>
-    <!-- Scrollable Resume Preview -->
-    <div style="width:100%; height:500px; background:rgba(0,0,0,0.4);">
-       <object data="resume.pdf#view=FitH" type="application/pdf" width="100%" height="100%">
-          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text3); font-family:'DM Mono', monospace; font-size:0.8rem; padding:20px; text-align:center;">
-              <span style="font-size:2.5rem; margin-bottom:12px;">📄</span>
-              <span>Preview unavailable. Make sure your resume is named <b>resume.pdf</b> and placed in the same folder.</span>
-          </div>
-       </object>
+    <!-- Scrollable Resume Preview — auto-fetched from Drive reports folder -->
+    <div style="width:100%; height:500px; background:rgba(0,0,0,0.4);" id="resume-preview-container">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);font-family:'DM Mono',monospace;font-size:0.8rem;padding:20px;text-align:center;">
+        <span style="font-size:2.5rem;margin-bottom:12px;">📄</span>
+        <span>Loading resume from Drive...</span>
+      </div>
     </div>
   </div>
 
@@ -2894,6 +2892,8 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
 
 /* ══════════════════════════════════════════════
    ██████  GOOGLE DRIVE AUTO-SYNC SYSTEM  ██████
+/* ══════════════════════════════════════════════
+   ██████  GOOGLE DRIVE AUTO-SYNC SYSTEM  ██████
 ══════════════════════════════════════════════ */
 const GD_KEY = 'AIzaSyBidu-ZsHvX6eZ98QDrT3jG9GCbj-0kn4M';
 const GD_FOLDERS = {
@@ -2903,116 +2903,163 @@ const GD_FOLDERS = {
   events:                   '1e9oLw0vGNs0PTuzyg73oicnTNTd2qvQF',
   hackathons:               '1mbDf3O87foo85HIloNjHN5n36GMaAh4c',
   tryhackme:                '1yLrG5ohYGks54YjyjrE6yxQLHcA9jysa',
-  'internship-certificates':'1IFOxSPpO2BPcITMtOxpZjV9BdrZSGKqe'
+  'internship-certificates':'1IFOxSPpO2BPcITMtOxpZjV9BdrZSGKqe',
+  reports:                  '1SKguVAvLwpGJgPFyTy26dbiVepIHwxMx'
 };
 
-// Convert a Drive filename to a readable cert name
-// e.g. "Google cybersecurity(1) (1).pdf" → "Google Cybersecurity"
-function driveNameToCertName(filename){
-  return filename
-    .replace(/\.[^.]+$/, '')           // remove extension
-    .replace(/\s*\(\d+\)\s*/g, ' ')   // remove (1), (2) etc
-    .replace(/[-_]/g, ' ')             // dashes/underscores to spaces
-    .replace(/\s+/g, ' ')              // collapse spaces
-    .trim()
-    .replace(/\w/g, c=>c.toUpperCase()); // Title Case
-}
-
-// Guess category icon from filename/category
-function catIcon(cat){
-  const icons = {badges:'🏅',courses:'📚',ctfs:'🚩',events:'🎤',hackathons:'💡',tryhackme:'🔓','internship-certificates':'📜'};
-  return icons[cat] || '🎓';
-}
+// Keywords that indicate files belong to the same bundle/course
+const BUNDLE_KEYWORDS = [
+  'google cybersecurity', 'google cloud cybersecurity',
+  'prompt engineering', 'junior cybersecurity analyst',
+  'chougle talha', 'neofuture', 'bot-a-thon', 'introduction to cybersecurity'
+];
 
 function gdViewUrl(id){ return 'https://drive.google.com/file/d/'+id+'/view'; }
+function gdPreviewUrl(id){ return 'https://drive.google.com/file/d/'+id+'/preview'; }
+
+// Clean filename to readable name — remove (1), extensions, underscores
+function cleanName(fn){
+  return fn.replace(/\.[^.]+$/,'').replace(/\s*\(\d+\)\s*/g,' ')
+    .replace(/[-_]/g,' ').replace(/\s+/g,' ').trim()
+    .replace(/\b\w/g,c=>c.toUpperCase());
+}
+
+function catIcon(cat){
+  return {badges:'\uD83C\uDFC5',courses:'\uD83D\uDCDA',ctfs:'\uD83D\uDEA9',events:'\uD83C\uDFA4',
+    hackathons:'\uD83D\uDCA1',tryhackme:'\uD83D\uDD13','internship-certificates':'\uD83D\uDCDC'}[cat]||'\uD83C\uDF93';
+}
 
 async function fetchDriveFolder(folderId){
-  const apiUrl = 'https://www.googleapis.com/drive/v3/files'
+  const url = 'https://www.googleapis.com/drive/v3/files'
     +'?q=%27'+folderId+'%27+in+parents+and+trashed%3Dfalse'
-    +'&fields=files(id,name,mimeType)'
-    +'&pageSize=100'
-    +'&key='+GD_KEY;
+    +'&fields=files(id,name,mimeType)&pageSize=100&key='+GD_KEY;
   try{
-    const r = await fetch(apiUrl, {cache:'no-cache'});
-    if(!r.ok){ console.warn('[Drive] HTTP '+r.status+' for folder '+folderId); return []; }
+    const r = await fetch(url,{cache:'no-cache'});
+    if(!r.ok){console.warn('[Drive] HTTP '+r.status);return[];}
     const d = await r.json();
-    if(d.error){ console.warn('[Drive] API error:', d.error.message); return []; }
+    if(d.error){console.warn('[Drive] API:',d.error.message);return[];}
     const files = (d.files||[]).filter(f=>f.name!=='.gitkeep'&&!f.name.startsWith('.'));
     console.log('[Drive] '+folderId+' → '+files.length+' files');
     return files;
-  }catch(e){ console.warn('[Drive] fetch failed:', e.message); return []; }
+  }catch(e){console.warn('[Drive]',e.message);return[];}
+}
+
+// Group files into bundles by shared keyword prefix
+function groupIntoBundles(files, cat){
+  const bundles = [];
+  const used = new Set();
+
+  files.forEach((f,i) => {
+    if(used.has(i)) return;
+    const fSlug = f.name.toLowerCase().replace(/\.[^.]+$/,'').replace(/\s*\(\d+\)/g,'').trim();
+
+    // Check if this file belongs to a known bundle keyword
+    const matchedKw = BUNDLE_KEYWORDS.find(kw => fSlug.includes(kw.toLowerCase()));
+
+    if(matchedKw){
+      // Find all files sharing the same keyword
+      const group = files.filter((g,j) => {
+        if(used.has(j)) return false;
+        const gSlug = g.name.toLowerCase().replace(/\.[^.]+$/,'').replace(/\s*\(\d+\)/g,'').trim();
+        return gSlug.includes(matchedKw.toLowerCase());
+      });
+      group.forEach((_,j) => used.add(files.indexOf(group[j])));
+
+      const name = cleanName(matchedKw);
+      bundles.push({
+        name, cat,
+        files: group,
+        primaryId: group[0].id,
+        count: group.length
+      });
+    } else {
+      used.add(i);
+      bundles.push({
+        name: cleanName(f.name),
+        cat,
+        files: [f],
+        primaryId: f.id,
+        count: 1
+      });
+    }
+  });
+
+  return bundles;
+}
+
+function bundleToCertEntry(bundle){
+  const existing = CERTS_DATA.find(c =>
+    c.category === bundle.cat &&
+    c.name.toLowerCase().includes(bundle.name.toLowerCase().substring(0,8))
+  );
+  const allLinks = bundle.files.map(f=>gdViewUrl(f.id));
+  return {
+    name: existing ? existing.name : bundle.name,
+    sub: existing ? existing.sub : bundle.cat.charAt(0).toUpperCase()+bundle.cat.slice(1),
+    icon: existing ? existing.icon : catIcon(bundle.cat),
+    tags: existing ? existing.tags : [bundle.cat],
+    desc: existing ? existing.desc : bundle.name+' certificate'+(bundle.count>1?' ('+bundle.count+' files)':'')+'.',
+    date: existing ? existing.date : new Date().getFullYear().toString(),
+    category: bundle.cat,
+    certLink: gdViewUrl(bundle.primaryId),
+    allCertLinks: allLinks,
+    fileCount: bundle.count
+  };
 }
 
 async function syncCertsFromGitHub(){
   const badge = document.getElementById('gh-sync-badge');
-  const setBadge = (t,c) => { if(!badge)return; badge.textContent=t; badge.style.color=c; badge.style.opacity='1'; };
+  const setBadge = (t,c)=>{if(!badge)return;badge.textContent=t;badge.style.color=c;badge.style.opacity='1';};
   setBadge('Syncing from Drive...','var(--amber)');
 
-  let totalFiles = 0;
+  let totalFiles=0;
+  const freshCerts=[];
 
-  // Build fresh CERTS_DATA entirely from Drive contents
-  const freshCerts = [];
-
-  for(const [cat, folderId] of Object.entries(GD_FOLDERS)){
-    if(cat === 'internship-certificates') continue;
+  // ── Cert folders ──
+  for(const [cat,folderId] of Object.entries(GD_FOLDERS)){
+    if(cat==='internship-certificates'||cat==='reports') continue;
     const files = await fetchDriveFolder(folderId);
     totalFiles += files.length;
-    files.forEach(f => {
-      const certName = driveNameToCertName(f.name);
-      // Check if already exists in CERTS_DATA (by name match) to preserve metadata
-      const existing = CERTS_DATA.find(c =>
-        c.category === cat &&
-        (c.name.toLowerCase() === certName.toLowerCase() ||
-         c.certLink === gdViewUrl(f.id))
-      );
-      if(existing){
-        existing.certLink = gdViewUrl(f.id);
-        freshCerts.push(existing);
-      } else {
-        // New file in Drive — create a new cert entry automatically
-        freshCerts.push({
-          name: certName,
-          sub: cat.charAt(0).toUpperCase()+cat.slice(1),
-          icon: catIcon(cat),
-          tags: [cat.charAt(0).toUpperCase()+cat.slice(1)],
-          desc: certName+' certificate.',
-          date: new Date().getFullYear().toString(),
-          category: cat,
-          certLink: gdViewUrl(f.id)
-        });
-      }
-    });
+    const bundles = groupIntoBundles(files, cat);
+    bundles.forEach(b => freshCerts.push(bundleToCertEntry(b)));
   }
 
-  // Handle internship certs — update EXP certLinks
+  // ── Internship certs → EXP View Cert buttons ──
   const internFiles = await fetchDriveFolder(GD_FOLDERS['internship-certificates']);
   totalFiles += internFiles.length;
-  internFiles.forEach(f => {
-    const fname = f.name.toLowerCase();
-    EXP.forEach(exp => {
-      const orgWord = exp.org ? exp.org.split('—')[0].trim().split(' ')[0].toLowerCase() : '';
-      const titleWord = exp.title.split(' ')[0].toLowerCase();
-      if(fname.includes(orgWord) || fname.includes(titleWord)){
-        exp.certLink = gdViewUrl(f.id);
-      }
-    });
+  EXP.forEach(exp => {
+    const orgKw = exp.org ? exp.org.split('\u2014')[0].trim().split(' ')[0].toLowerCase() : '';
+    const hit = internFiles.find(f=>f.name.toLowerCase().includes(orgKw))
+             || internFiles.find(f=>f.name.toLowerCase().includes(exp.title.split(' ')[0].toLowerCase()));
+    if(hit) exp.certLink = gdViewUrl(hit.id);
   });
 
-  if(totalFiles > 0 && freshCerts.length > 0){
-    // Replace CERTS_DATA contents with Drive-sourced certs
-    CERTS_DATA.length = 0;
-    freshCerts.forEach(c => CERTS_DATA.push(c));
-    CERTS = [...CERTS_DATA];
-
-    renderResume();
-    const fc = currentCertCat==='all'?[...CERTS_DATA]:CERTS_DATA.filter(c=>c.category===currentCertCat);
-    certDial.switchData(fc,()=>{});
-
-    setBadge(freshCerts.length+' certs loaded from Drive','var(--green)');
-  } else {
-    setBadge(totalFiles===0?'⚠ Drive unreachable':'⚠ No certs found','var(--text3)');
+  // ── Resume PDF from reports folder ──
+  const reportFiles = await fetchDriveFolder(GD_FOLDERS['reports']);
+  totalFiles += reportFiles.length;
+  const resumeFile = reportFiles.find(f=>f.name.toLowerCase().includes('resume')||f.name.toLowerCase().includes('cv'));
+  if(resumeFile){
+    const resumePreview = document.getElementById('resume-preview-container');
+    if(resumePreview){
+      resumePreview.innerHTML = '<iframe src="'+gdPreviewUrl(resumeFile.id)+'" style="width:100%;height:100%;border:none;" loading="lazy"></iframe>';
+    }
+    const dlBtn = document.getElementById('resume-dl-btn');
+    if(dlBtn) dlBtn.href = gdViewUrl(resumeFile.id);
   }
-  setTimeout(()=>{ if(badge) badge.style.opacity='0'; },6000);
+
+  // ── Update CERTS_DATA ──
+  if(freshCerts.length>0){
+    CERTS_DATA.length=0;
+    freshCerts.forEach(c=>CERTS_DATA.push(c));
+    CERTS=[...CERTS_DATA];
+    renderResume();
+    const fc=currentCertCat==='all'?[...CERTS_DATA]:CERTS_DATA.filter(c=>c.category===currentCertCat);
+    certDial.switchData(fc,()=>{});
+    setBadge(freshCerts.length+' certs from Drive','var(--green)');
+  } else {
+    setBadge(totalFiles===0?'\u26a0 Drive unreachable':'\u26a0 No certs found','var(--text3)');
+  }
+  setTimeout(()=>{if(badge)badge.style.opacity='0';},6000);
 }
 
 window.addEventListener('load', ()=>setTimeout(syncCertsFromGitHub, 1500));
