@@ -1197,21 +1197,25 @@ var PROJECTS=PROJECTS_CYBER;
 
 // CERTS_DATA serves as the master list; CERTS is the filtered display list
 var CERTS_DATA=[
-  {name:"Google Cyber",sub:"Professional Certificate",icon:"🔐",tags:["Network Security","SIEM","Python"],desc:"8-course Google Cybersecurity Professional specialisation. Covers network security, SIEM tools, Python automation, and incident response.", date: "Oct 2024", category: "courses"},
-  {name:"Cloud Cyber",sub:"Google Cloud Security",icon:"☁️",tags:["GCP Security","IAM","Zero Trust"],desc:"Google Cloud Cybersecurity Professional Certificate. Covers GCP Security, IAM, Cloud Forensics, and Zero Trust architecture.", date: "Nov 2024", category: "courses"},
-  {name:"Cisco Jr.",sub:"Junior Cyber Analyst",icon:"🛡️",tags:["Network Defence","Threat Analysis"],desc:"Cisco Networking Academy Junior Cybersecurity Analyst. Covers network defence, threat analysis, and security operations fundamentals.", date: "Dec 2024", category: "courses"},
-  {name:"GenAI",sub:"Google Certificate",icon:"🤖",tags:["LLMs","Prompt Engineering","AI Ethics"],desc:"Google Generative AI Fundamentals certificate. Covers large language models, prompt engineering, AI ethics, and responsible AI practices.", date: "15 Sep 2025", category: "courses", certLink: "GenAi certificate.pdf"},
-  {name:"NEOFuture",sub:"IEEE Hackathon",icon:"🏅",tags:["Full Stack","ML Integration","IEEE"],desc:"NEOFuture Hackathon by IEEE Maharashtra. PS-402 track — built ThreatLens, a real-time phishing URL detector with 92%+ ML accuracy.", date: "Dec 2025", category: "hackathons"},
-  {name:"AoC 2025",sub:"TryHackMe Badge",icon:"🎄",tags:["CTF","Security"],desc:"Completed the Advent of Cyber 2025 event.",date:"Jan 2026", category: "badges", certLink: "Advent of Cyber 2025(Badge).png"},
-  {name:"Ethical Hacker",sub:"Cisco Badge",icon:"🛡️",tags:["Offensive","Cisco"],desc:"Verified Ethical Hacker badge from Cisco Networking Academy.",date:"2026", category: "badges", certLink: "Cisco ethical hacker badge.jpg"},
-  {name:"Jr Analyst",sub:"Cisco Badge",icon:"🔎",tags:["Defensive","Cisco"],desc:"Verified Junior Cybersecurity Analyst Career Path badge from Cisco Networking Academy.",date:"2026", category: "badges", certLink: "CyberSecurity Essentials(Badge).jpg"},
-  {name:"Intro to Cyber",sub:"Cisco Badge",icon:"🔰",tags:["Basics","Cisco"],desc:"Verified Introduction to Cybersecurity badge from Cisco Networking Academy.",date:"2026", category: "badges", certLink: "introduction-to-cybersecurity.png"},
-  {name:"Packet Tracer",sub:"NIIT Foundation",icon:"📡",tags:["Networking","Cisco"],desc:"Completed 2-hour Getting Started with Cisco Packet Tracer course via NIIT Foundation.",date:"Aug 2025", category: "badges", certLink: "Packet Tracer(Achievement).png"},
-  {name:"Hacks4Insights",sub:"ITM Skills Uni",icon:"💡",tags:["Data","Analytics"],desc:"Participated in Hacks4Insights-2025 intercollegiate hackathon focusing on data-driven problem solving.",date:"Dec 2025", category: "hackathons", certLink: "Chougle Talha.pdf"},
-  {name:"MumbaiHacks",sub:"Agentic AI Hackathon",icon:"🤖",tags:["AI","TEAM"],desc:"Participated in MumbaiHacks 2025, the largest Agentic AI hackathon organized by Tech Entrepreneurs Association of Mumbai.",date:"Nov 2025", category: "hackathons", certLink: "Chougle Talha_Certificate.pdf"},
-  {name:"GenAI Build",sub:"NxtWave",icon:"🧠",tags:["Generative AI","OpenAI"],desc:"Completed the Generative AI Mastery Workshop and participated in India's Biggest GenAI Buildathon.",date:"15 Sep 2025", category: "hackathons", certLink: "GenAi certificate.pdf"},
-  {name:"NextEdge",sub:"VSIT & IEEE",icon:"📊",tags:["Data","Cyber Security"],desc:"Successfully presented a case study at the National Level Conclave NextEdge: Data Analytics & Cyber Security.",date:"Aug 2025", category: "hackathons", certLink: "NextEdge(VSIT).jpg"},
-  {name:"Techathon'35",sub:"Hackathon",icon:"💻",tags:["Tech","Competition"],desc:"Actively participated and competed in the Techathon'35 event.",date:"Dec 2025", category: "hackathons", certLink: "Techathon(Vasai).jpeg"}
+  {name:"Google Cyber",sub:"Professional Certificate",icon:"🔐",tags:["Network Security","SIEM","Python"],desc:"8-course Google Cybersecurity Professional specialisation. Covers network security, SIEM tools, Python automation, and incident response.", date: "Oct 2024", category: "courses", certLink:"", aliases:["google cybersecurity","googlecybersecurity"]},
+  {name:"Cloud Cyber",sub:"Google Cloud Security",icon:"☁️",tags:["GCP Security","IAM","Zero Trust"],desc:"Google Cloud Cybersecurity Professional Certificate. Covers GCP Security, IAM, Cloud Forensics, and Zero Trust architecture.", date: "Nov 2024", category: "courses", certLink:"", aliases:["google cloud cybersecurity","googlecloudcybersecurity"]},
+  {name:"Cisco Jr.",sub:"Junior Cyber Analyst",icon:"🛡️",tags:["Network Defence","Threat Analysis"],desc:"Cisco Networking Academy Junior Cybersecurity Analyst. Covers network defence, threat analysis, and security operations fundamentals.", date: "Dec 2024", category: "courses", certLink:"", aliases:["junior cybersecurity analyst","junior","juniorcybersecurityanalyst"]},
+  {name:"GenAI",sub:"Google Certificate",icon:"🤖",tags:["LLMs","Prompt Engineering","AI Ethics"],desc:"Google Generative AI Fundamentals certificate. Covers large language models, prompt engineering, AI ethics, and responsible AI practices.", date: "15 Sep 2025", category: "courses", certLink:"", aliases:["prompt engineering","genai certificate","generativeai"]},
+  {name:"NEOFuture",sub:"IEEE Hackathon",icon:"🏅",tags:["Full Stack","ML Integration","IEEE"],desc:"NEOFuture Hackathon by IEEE Maharashtra. PS-402 track — built ThreatLens, a real-time phishing URL detector with 92%+ ML accuracy.", date: "Dec 2025", category: "hackathons", certLink:"", aliases:["neofuture","47c51269","ieee"]},
+  {name:"AoC 2025",sub:"TryHackMe Badge",icon:"🎄",tags:["CTF","Security"],desc:"Completed the Advent of Cyber 2025 event.",date:"Jan 2026", category: "badges", certLink:"", aliases:["advent of cyber","adventofcyber","aoc"]},
+  {name:"Ethical Hacker",sub:"Cisco Badge",icon:"🛡️",tags:["Offensive","Cisco"],desc:"Verified Ethical Hacker badge from Cisco Networking Academy.",date:"2026", category: "badges", certLink:"", aliases:["cisco ethical hacker","ethicalhacker"]},
+  {name:"Jr Analyst",sub:"Cisco Badge",icon:"🔎",tags:["Defensive","Cisco"],desc:"Verified Junior Cybersecurity Analyst Career Path badge from Cisco Networking Academy.",date:"2026", category: "badges", certLink:"", aliases:["cybersecurity essentials","cyberscurityessentials"]},
+  {name:"Intro to Cyber",sub:"Cisco Badge",icon:"🔰",tags:["Basics","Cisco"],desc:"Verified Introduction to Cybersecurity badge from Cisco Networking Academy.",date:"2026", category: "badges", certLink:"", aliases:["introduction to cybersecurity","introductiontocybersecurity"]},
+  {name:"Packet Tracer",sub:"NIIT Foundation",icon:"📡",tags:["Networking","Cisco"],desc:"Completed 2-hour Getting Started with Cisco Packet Tracer course via NIIT Foundation.",date:"Aug 2025", category: "badges", certLink:"", aliases:["packet tracer","packettracer","getting started with cisco"]},
+  {name:"Hacks4Insights",sub:"ITM Skills Uni",icon:"💡",tags:["Data","Analytics"],desc:"Participated in Hacks4Insights-2025 intercollegiate hackathon focusing on data-driven problem solving.",date:"Dec 2025", category: "hackathons", certLink:"", aliases:["hacks4insights","chougle talha"]},
+  {name:"MumbaiHacks",sub:"Agentic AI Hackathon",icon:"🤖",tags:["AI","TEAM"],desc:"Participated in MumbaiHacks 2025, the largest Agentic AI hackathon organized by Tech Entrepreneurs Association of Mumbai.",date:"Nov 2025", category: "hackathons", certLink:"", aliases:["mumbaihacks","chougle talha certificate"]},
+  {name:"GenAI Build",sub:"NxtWave",icon:"🧠",tags:["Generative AI","OpenAI"],desc:"Completed the Generative AI Mastery Workshop and participated in India's Biggest GenAI Buildathon.",date:"15 Sep 2025", category: "hackathons", certLink:"", aliases:["genai certificate","generativeai"]},
+  {name:"NextEdge",sub:"VSIT & IEEE",icon:"📊",tags:["Data","Cyber Security"],desc:"Successfully presented a case study at the National Level Conclave NextEdge: Data Analytics & Cyber Security.",date:"Aug 2025", category: "hackathons", certLink:"", aliases:["nextedge","vsit"]},
+  {name:"Techathon'35",sub:"Hackathon",icon:"💻",tags:["Tech","Competition"],desc:"Actively participated and competed in the Techathon'35 event.",date:"Dec 2025", category: "hackathons", certLink:"", aliases:["techathon","vasai"]},
+  {name:"CHWCTF 2026",sub:"CTF Competition",icon:"\uD83D\uDEA9",tags:["CTF","Hacking"],desc:"Completed CHW CTF 2026A competition challenge.",date:"2026", category: "ctfs", certLink:"", aliases:["chwctf","chougle talha zahoor ahmed chwctf"]},
+  {name:"Talha CTF",sub:"CTF Certificate",icon:"\uD83D\uDEA9",tags:["CTF","Security"],desc:"CTF competition participation and completion certificate.",date:"2025", category: "ctfs", certLink:"", aliases:["talha zahoor ahmed chougle","309.chougle"]},
+  {name:"NLP Seminar",sub:"National Event",icon:"\uD83C\uDFA4",tags:["NLP","AI","Seminar"],desc:"Attended National Level NLP Seminar on AI applications.",date:"2025", category: "events", certLink:"", aliases:["nlp seminar","nlp"]},
+  {name:"National Event",sub:"Participation",icon:"\uD83C\uDFC5",tags:["Event"],desc:"Participation certificate from a national level event.",date:"2025", category: "events", certLink:"", aliases:["chougle talha zahoor ahmed certificate"]}
 ];
 var CERTS = [...CERTS_DATA];
 
@@ -2891,7 +2895,7 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
 /* ══════════════════════════════════════════════
    ██████  GOOGLE DRIVE AUTO-SYNC SYSTEM  ██████
 ══════════════════════════════════════════════ */
-// Folder IDs are permanent — files inside are fetched live on every page load
+const GD_KEY = 'AIzaSyBidu-ZsHvX6eZ98QDrT3jG9GCbj-0kn4M';
 const GD_FOLDERS = {
   badges:                   '1RmIERRTLi65kt5d3vtjLLVefJcm-4Pxe',
   courses:                  '1EIT4Obz3Wbpf148Ew84w5xGexjALO6A0',
@@ -2902,42 +2906,41 @@ const GD_FOLDERS = {
   'internship-certificates':'1IFOxSPpO2BPcITMtOxpZjV9BdrZSGKqe'
 };
 
-function slugify(s){ return s.toLowerCase().replace(/[^a-z0-9]/g,''); }
-function bestMatch(name, files){
-  const s = slugify(name);
-  return files.find(f=>slugify(f.name.replace(/\.[^.]+$/,''))===s)
-      || files.find(f=>slugify(f.name).includes(s))
-      || files.find(f=>s.includes(slugify(f.name.replace(/\.[^.]+$/,''))));
+// Convert a Drive filename to a readable cert name
+// e.g. "Google cybersecurity(1) (1).pdf" → "Google Cybersecurity"
+function driveNameToCertName(filename){
+  return filename
+    .replace(/\.[^.]+$/, '')           // remove extension
+    .replace(/\s*\(\d+\)\s*/g, ' ')   // remove (1), (2) etc
+    .replace(/[-_]/g, ' ')             // dashes/underscores to spaces
+    .replace(/\s+/g, ' ')              // collapse spaces
+    .trim()
+    .replace(/\w/g, c=>c.toUpperCase()); // Title Case
 }
+
+// Guess category icon from filename/category
+function catIcon(cat){
+  const icons = {badges:'🏅',courses:'📚',ctfs:'🚩',events:'🎤',hackathons:'💡',tryhackme:'🔓','internship-certificates':'📜'};
+  return icons[cat] || '🎓';
+}
+
 function gdViewUrl(id){ return 'https://drive.google.com/file/d/'+id+'/view'; }
 
 async function fetchDriveFolder(folderId){
-  // Try direct API first (works on https), then proxies as fallback
   const apiUrl = 'https://www.googleapis.com/drive/v3/files'
     +'?q=%27'+folderId+'%27+in+parents+and+trashed%3Dfalse'
     +'&fields=files(id,name,mimeType)'
     +'&pageSize=100'
-    +'&key=AIzaSyBidu-ZsHvX6eZ98QDrT3jG9GCbj-0kn4M';
-  const proxies = [
-    apiUrl,  // direct (works on hosted pages without CORS issues for public data)
-    'https://api.allorigins.win/get?url='+encodeURIComponent(apiUrl),
-    'https://corsproxy.io/?'+encodeURIComponent(apiUrl)
-  ];
-  for(const proxy of proxies){
-    try{
-      const r = await fetch(proxy, {cache:'no-cache'});
-      if(!r.ok){ console.warn('[Drive] '+proxy.slice(0,60)+' → HTTP '+r.status); continue; }
-      const wrapper = await r.json();
-      const raw = wrapper.contents || wrapper;
-      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      if(data && data.files){
-        console.log('[Drive] folder '+folderId+' → '+data.files.length+' files via '+proxy.slice(0,50));
-        return data.files;
-      }
-      if(data && data.error){ console.warn('[Drive] API error:', data.error.message); }
-    }catch(e){ console.warn('[Drive] fetch failed:', e.message); continue; }
-  }
-  return [];
+    +'&key='+GD_KEY;
+  try{
+    const r = await fetch(apiUrl, {cache:'no-cache'});
+    if(!r.ok){ console.warn('[Drive] HTTP '+r.status+' for folder '+folderId); return []; }
+    const d = await r.json();
+    if(d.error){ console.warn('[Drive] API error:', d.error.message); return []; }
+    const files = (d.files||[]).filter(f=>f.name!=='.gitkeep'&&!f.name.startsWith('.'));
+    console.log('[Drive] '+folderId+' → '+files.length+' files');
+    return files;
+  }catch(e){ console.warn('[Drive] fetch failed:', e.message); return []; }
 }
 
 async function syncCertsFromGitHub(){
@@ -2945,37 +2948,70 @@ async function syncCertsFromGitHub(){
   const setBadge = (t,c) => { if(!badge)return; badge.textContent=t; badge.style.color=c; badge.style.opacity='1'; };
   setBadge('Syncing from Drive...','var(--amber)');
 
-  let updated = 0, totalFound = 0;
+  let totalFiles = 0;
+
+  // Build fresh CERTS_DATA entirely from Drive contents
+  const freshCerts = [];
 
   for(const [cat, folderId] of Object.entries(GD_FOLDERS)){
+    if(cat === 'internship-certificates') continue;
     const files = await fetchDriveFolder(folderId);
-    totalFound += files.length;
-    if(cat === 'internship-certificates'){
-      EXP.forEach(exp => {
-        const kw = exp.org ? exp.org.split('\u2014')[0].trim().split(' ')[0].toLowerCase() : '';
-        const hit = files.find(f=>f.name.toLowerCase().includes(kw)) || bestMatch(exp.title, files);
-        if(hit){ const u=gdViewUrl(hit.id); if(u!==exp.certLink){exp.certLink=u;updated++;} }
-      });
-    } else {
-      CERTS_DATA.forEach(cert => {
-        if(cert.category !== cat) return;
-        const hit = bestMatch(cert.name, files);
-        if(hit){ const u=gdViewUrl(hit.id); if(u!==cert.certLink){cert.certLink=u;updated++;} }
-      });
-    }
+    totalFiles += files.length;
+    files.forEach(f => {
+      const certName = driveNameToCertName(f.name);
+      // Check if already exists in CERTS_DATA (by name match) to preserve metadata
+      const existing = CERTS_DATA.find(c =>
+        c.category === cat &&
+        (c.name.toLowerCase() === certName.toLowerCase() ||
+         c.certLink === gdViewUrl(f.id))
+      );
+      if(existing){
+        existing.certLink = gdViewUrl(f.id);
+        freshCerts.push(existing);
+      } else {
+        // New file in Drive — create a new cert entry automatically
+        freshCerts.push({
+          name: certName,
+          sub: cat.charAt(0).toUpperCase()+cat.slice(1),
+          icon: catIcon(cat),
+          tags: [cat.charAt(0).toUpperCase()+cat.slice(1)],
+          desc: certName+' certificate.',
+          date: new Date().getFullYear().toString(),
+          category: cat,
+          certLink: gdViewUrl(f.id)
+        });
+      }
+    });
   }
 
-  if(updated > 0){
+  // Handle internship certs — update EXP certLinks
+  const internFiles = await fetchDriveFolder(GD_FOLDERS['internship-certificates']);
+  totalFiles += internFiles.length;
+  internFiles.forEach(f => {
+    const fname = f.name.toLowerCase();
+    EXP.forEach(exp => {
+      const orgWord = exp.org ? exp.org.split('—')[0].trim().split(' ')[0].toLowerCase() : '';
+      const titleWord = exp.title.split(' ')[0].toLowerCase();
+      if(fname.includes(orgWord) || fname.includes(titleWord)){
+        exp.certLink = gdViewUrl(f.id);
+      }
+    });
+  });
+
+  if(totalFiles > 0 && freshCerts.length > 0){
+    // Replace CERTS_DATA contents with Drive-sourced certs
+    CERTS_DATA.length = 0;
+    freshCerts.forEach(c => CERTS_DATA.push(c));
+    CERTS = [...CERTS_DATA];
+
     renderResume();
     const fc = currentCertCat==='all'?[...CERTS_DATA]:CERTS_DATA.filter(c=>c.category===currentCertCat);
     certDial.switchData(fc,()=>{});
-  }
 
-  const linked = CERTS_DATA.filter(c=>c.certLink&&c.certLink.startsWith('http')).length;
-  setBadge(
-    totalFound===0 ? '⚠ Drive unreachable' : linked+'/'+CERTS_DATA.length+' certs synced from Drive',
-    totalFound===0 ? 'var(--text3)' : linked>0 ? 'var(--green)' : 'var(--amber)'
-  );
+    setBadge(freshCerts.length+' certs loaded from Drive','var(--green)');
+  } else {
+    setBadge(totalFiles===0?'⚠ Drive unreachable':'⚠ No certs found','var(--text3)');
+  }
   setTimeout(()=>{ if(badge) badge.style.opacity='0'; },6000);
 }
 
