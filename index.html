@@ -160,7 +160,7 @@ section{position:relative;z-index:1;padding:110px 8vw 90px;width:100%;box-sizing
 .tcmd-desc{color:var(--text2);font-family:'DM Mono',monospace;font-size:.78rem}
 
 /* ── SAFE DIAL SECTION ── */
-.safe-dial-section{
+.safe-dial-section{will-change:transform;
   position:relative;z-index:1;
   padding:110px 0 90px;
   width:100%;
@@ -1785,7 +1785,7 @@ function init3D() {
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     container.appendChild(renderer.domElement);
 
     const gridColor = new THREE.Color(0x00e5ff);
@@ -1806,7 +1806,7 @@ function init3D() {
     const nodeMaterial = new THREE.MeshBasicMaterial({ color: 0x00e5ff, wireframe: true, transparent: true, opacity: 0.3 });
     const amberMaterial = new THREE.MeshBasicMaterial({ color: 0xffb300, wireframe: true, transparent: true, opacity: 0.5 });
     
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 30; i++) {
         const mesh = new THREE.Mesh(nodeGeometry, Math.random() > 0.8 ? amberMaterial : nodeMaterial);
         mesh.position.set(
             (Math.random() - 0.5) * 400,
@@ -1862,7 +1862,7 @@ function init3D() {
     }
 
     const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 2000;
+    const particlesCount = 800;
     const posArray = new Float32Array(particlesCount * 3);
     for(let i=0; i < particlesCount * 3; i+=3) {
         posArray[i] = (Math.random() - 0.5) * 500;
@@ -1950,14 +1950,16 @@ function init3D() {
     document.addEventListener('touchend', () => { isDraggingGlobe = false; });
 
     let scrollY = window.scrollY;
-    window.addEventListener('scroll', () => {
-        scrollY = window.scrollY;
-    });
+    window.addEventListener('scroll', () => { scrollY = window.scrollY; }, {passive:true});
 
     const clock = new THREE.Clock();
 
-    function animate() {
+    let lastFrame = 0;
+    function animate(ts) {
         requestAnimationFrame(animate);
+        if(document.hidden) return; // skip when tab not active
+        if(ts - lastFrame < 16) return; // cap at ~60fps
+        lastFrame = ts;
         const elapsedTime = clock.getElapsedTime();
 
         targetX = mouseX * 0.01;
@@ -2987,6 +2989,27 @@ function groupIntoBundles(files, cat){
   return bundles;
 }
 
+const GEMINI_KEY = 'AIzaSyC_ywFy508ULy1FlTE8qdWvAz1zqWEy8wQ';
+const descCache = {};
+
+async function generateDesc(name, cat, fileCount){
+  const cacheKey = name+'|'+cat;
+  if(descCache[cacheKey]) return descCache[cacheKey];
+  try {
+    const prompt = 'In 1 sentence (max 20 words), write a professional portfolio description for a cybersecurity certificate called "'+name+'" in the "'+cat+'" category'+(fileCount>1?' with '+fileCount+' modules':'')+'. Be specific and natural. No quotes.';
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+GEMINI_KEY, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+    });
+    if(!r.ok) return null;
+    const d = await r.json();
+    const text = d?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if(text){ descCache[cacheKey]=text; return text; }
+  } catch(e){}
+  return null;
+}
+
 function bundleToCertEntry(bundle){
   const existing = CERTS_DATA.find(c =>
     c.category === bundle.cat &&
@@ -3003,8 +3026,24 @@ function bundleToCertEntry(bundle){
     category: bundle.cat,
     certLink: gdViewUrl(bundle.primaryId),
     allCertLinks: allLinks,
-    fileCount: bundle.count
+    fileCount: bundle.count,
+    _needsDesc: !existing // flag to generate AI desc
   };
+}
+
+async function enrichWithAIDescs(certs){
+  // Only generate for certs without existing descriptions (new Drive files)
+  const toEnrich = certs.filter(c=>c._needsDesc);
+  if(toEnrich.length===0) return;
+  // Process in parallel batches of 3 to avoid rate limits
+  for(let i=0; i<toEnrich.length; i+=3){
+    const batch = toEnrich.slice(i,i+3);
+    await Promise.all(batch.map(async cert => {
+      const desc = await generateDesc(cert.name, cert.category, cert.fileCount||1);
+      if(desc) cert.desc = desc;
+      delete cert._needsDesc;
+    }));
+  }
 }
 
 async function syncCertsFromGitHub(){
@@ -3027,11 +3066,21 @@ async function syncCertsFromGitHub(){
   // ── Internship certs → EXP View Cert buttons ──
   const internFiles = await fetchDriveFolder(GD_FOLDERS['internship-certificates']);
   totalFiles += internFiles.length;
-  EXP.forEach(exp => {
-    const orgKw = exp.org ? exp.org.split('\u2014')[0].trim().split(' ')[0].toLowerCase() : '';
-    const hit = internFiles.find(f=>f.name.toLowerCase().includes(orgKw))
-             || internFiles.find(f=>f.name.toLowerCase().includes(exp.title.split(' ')[0].toLowerCase()));
-    if(hit) exp.certLink = gdViewUrl(hit.id);
+  console.log('[Drive] internship files:', internFiles.map(f=>f.name));
+  // Map each intern file to best matching EXP entry by any keyword overlap
+  internFiles.forEach(f => {
+    const fname = f.name.toLowerCase();
+    // Try to match each EXP entry
+    const matched = EXP.find(exp => {
+      const orgWords = exp.org ? exp.org.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(' ').filter(w=>w.length>3) : [];
+      const titleWords = exp.title.toLowerCase().split(' ').filter(w=>w.length>3);
+      return [...orgWords,...titleWords].some(w=>fname.includes(w));
+    });
+    if(matched) { matched.certLink = gdViewUrl(f.id); console.log('[Drive] intern cert matched:',f.name,'→',matched.title); }
+  });
+  // Fallback: assign by order if still unmatched
+  EXP.forEach((exp,i) => {
+    if(!exp.certLink && internFiles[i]) exp.certLink = gdViewUrl(internFiles[i].id);
   });
 
   // ── Resume PDF from reports folder ──
@@ -3056,6 +3105,12 @@ async function syncCertsFromGitHub(){
     const fc=currentCertCat==='all'?[...CERTS_DATA]:CERTS_DATA.filter(c=>c.category===currentCertCat);
     certDial.switchData(fc,()=>{});
     setBadge(freshCerts.length+' certs from Drive','var(--green)');
+    // Enrich new certs with AI descriptions in background
+    enrichWithAIDescs(freshCerts).then(()=>{
+      // Re-render after AI descriptions are ready
+      const fc2=currentCertCat==='all'?[...CERTS_DATA]:CERTS_DATA.filter(c=>c.category===currentCertCat);
+      certDial.switchData(fc2,()=>{});
+    });
   } else {
     setBadge(totalFiles===0?'\u26a0 Drive unreachable':'\u26a0 No certs found','var(--text3)');
   }
