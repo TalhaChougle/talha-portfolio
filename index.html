@@ -858,9 +858,14 @@ footer{position:relative;z-index:1;padding:28px 8vw;border-top:1px solid var(--b
 
     </div>
 
-    <!-- RIGHT COLUMN: Lab Reports (Dynamically Rendered by JS) -->
-    <div style="display:flex;flex-direction:column;gap:14px" id="labs-container">
-      <!-- Generated via renderLabs() -->
+    <!-- RIGHT COLUMN: Lab Reports from Drive -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="res-card rv3" id="lab-reports-card">
+        <div class="res-head">🧪 Lab Reports</div>
+        <div class="res-body" id="lab-reports-container">
+          <div style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--text3);padding:12px 0">Loading lab reports from Drive...</div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -2894,10 +2899,9 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
 
 /* ══════════════════════════════════════════════
    ██████  GOOGLE DRIVE AUTO-SYNC SYSTEM  ██████
-/* ══════════════════════════════════════════════
-   ██████  GOOGLE DRIVE AUTO-SYNC SYSTEM  ██████
 ══════════════════════════════════════════════ */
-const GD_KEY = 'AIzaSyBidu-ZsHvX6eZ98QDrT3jG9GCbj-0kn4M';
+const GD_KEY     = 'AIzaSyBidu-ZsHvX6eZ98QDrT3jG9GCbj-0kn4M';
+const GEMINI_KEY = 'AIzaSyC_ywFy508ULy1FlTE8qdWvAz1zqWEy8wQ';
 const GD_FOLDERS = {
   badges:                   '1RmIERRTLi65kt5d3vtjLLVefJcm-4Pxe',
   courses:                  '1EIT4Obz3Wbpf148Ew84w5xGexjALO6A0',
@@ -2909,26 +2913,90 @@ const GD_FOLDERS = {
   reports:                  '1SKguVAvLwpGJgPFyTy26dbiVepIHwxMx'
 };
 
-// Keywords that indicate files belong to the same bundle/course
 const BUNDLE_KEYWORDS = [
-  'google cybersecurity', 'google cloud cybersecurity',
-  'prompt engineering', 'junior cybersecurity analyst',
-  'chougle talha', 'neofuture', 'bot-a-thon', 'introduction to cybersecurity'
+  'google cybersecurity','google cloud cybersecurity','prompt engineering',
+  'junior cybersecurity analyst','introduction to cybersecurity',
+  'getting started with cisco','chougle talha','neofuture'
 ];
+
+// Per-session cache: filename → extracted info
+const driveInfoCache = JSON.parse(sessionStorage.getItem('driveInfoCache')||'{}');
+function saveCache(){ try{sessionStorage.setItem('driveInfoCache',JSON.stringify(driveInfoCache));}catch(e){} }
 
 function gdViewUrl(id){ return 'https://drive.google.com/file/d/'+id+'/view'; }
 function gdPreviewUrl(id){ return 'https://drive.google.com/file/d/'+id+'/preview'; }
-
-// Clean filename to readable name — remove (1), extensions, underscores
+function gdThumbUrl(id){ return 'https://drive.google.com/thumbnail?id='+id+'&sz=w400'; }
+function catIcon(cat){
+  return {badges:'\uD83C\uDFC5',courses:'\uD83D\uDCDA',ctfs:'\uD83D\uDEA9',events:'\uD83C\uDFA4',
+    hackathons:'\uD83D\uDCA1',tryhackme:'\uD83D\uDD13','internship-certificates':'\uD83D\uDCDC',
+    reports:'\uD83E\uDDEA'}[cat]||'\uD83C\uDF93';
+}
 function cleanName(fn){
   return fn.replace(/\.[^.]+$/,'').replace(/\s*\(\d+\)\s*/g,' ')
     .replace(/[-_]/g,' ').replace(/\s+/g,' ').trim()
     .replace(/\b\w/g,c=>c.toUpperCase());
 }
 
-function catIcon(cat){
-  return {badges:'\uD83C\uDFC5',courses:'\uD83D\uDCDA',ctfs:'\uD83D\uDEA9',events:'\uD83C\uDFA4',
-    hackathons:'\uD83D\uDCA1',tryhackme:'\uD83D\uDD13','internship-certificates':'\uD83D\uDCDC'}[cat]||'\uD83C\uDF93';
+// ── Gemini Vision: extract cert info from actual file ──
+async function extractCertInfo(fileId, filename, cat){
+  const cacheKey = fileId;
+  if(driveInfoCache[cacheKey]) return driveInfoCache[cacheKey];
+
+  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
+  const isPDF   = /\.pdf$/i.test(filename);
+  if(!isImage && !isPDF) return null;
+
+  try {
+    // Fetch the file as base64 via Drive API
+    const r = await fetch(
+      'https://www.googleapis.com/drive/v3/files/'+fileId+'?alt=media&key='+GD_KEY,
+      {cache:'no-cache'}
+    );
+    if(!r.ok) return null;
+    const blob = await r.blob();
+    const base64 = await new Promise(res => {
+      const fr = new FileReader();
+      fr.onload = ()=>res(fr.result.split(',')[1]);
+      fr.readAsDataURL(blob);
+    });
+
+    const mimeType = isPDF ? 'application/pdf' : blob.type || 'image/jpeg';
+    const prompt = `You are analyzing a certificate or document. Extract and return ONLY a JSON object with these exact keys:
+{
+  "name": "short certificate/course name (2-5 words max, no organization name)",
+  "org": "issuing organization name",
+  "date": "month and year if visible, else empty string",
+  "desc": "one professional sentence describing what this certificate represents",
+  "tags": ["tag1","tag2","tag3"]
+}
+Rules: name should be the certificate title only, not the filename. Return ONLY valid JSON, no markdown.`;
+
+    const geminiRes = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+GEMINI_KEY,
+      {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          contents:[{parts:[
+            {inline_data:{mime_type:mimeType, data:base64}},
+            {text:prompt}
+          ]}]
+        })
+      }
+    );
+    if(!geminiRes.ok) return null;
+    const gd = await geminiRes.json();
+    const raw = gd?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if(!raw) return null;
+    const cleaned = raw.replace(/```json|```/g,'').trim();
+    const info = JSON.parse(cleaned);
+    driveInfoCache[cacheKey] = info;
+    saveCache();
+    return info;
+  } catch(e){
+    console.warn('[Gemini] extraction failed for',filename,e.message);
+    return null;
+  }
 }
 
 async function fetchDriveFolder(folderId){
@@ -2940,163 +3008,159 @@ async function fetchDriveFolder(folderId){
     if(!r.ok){console.warn('[Drive] HTTP '+r.status);return[];}
     const d = await r.json();
     if(d.error){console.warn('[Drive] API:',d.error.message);return[];}
-    const files = (d.files||[]).filter(f=>f.name!=='.gitkeep'&&!f.name.startsWith('.'));
-    console.log('[Drive] '+folderId+' → '+files.length+' files');
-    return files;
+    return (d.files||[]).filter(f=>f.name!=='.gitkeep'&&!f.name.startsWith('.'));
   }catch(e){console.warn('[Drive]',e.message);return[];}
 }
 
-// Group files into bundles by shared keyword prefix
-function groupIntoBundles(files, cat){
-  const bundles = [];
-  const used = new Set();
-
-  files.forEach((f,i) => {
-    if(used.has(i)) return;
-    const fSlug = f.name.toLowerCase().replace(/\.[^.]+$/,'').replace(/\s*\(\d+\)/g,'').trim();
-
-    // Check if this file belongs to a known bundle keyword
-    const matchedKw = BUNDLE_KEYWORDS.find(kw => fSlug.includes(kw.toLowerCase()));
-
-    if(matchedKw){
-      // Find all files sharing the same keyword
-      const group = files.filter((g,j) => {
-        if(used.has(j)) return false;
-        const gSlug = g.name.toLowerCase().replace(/\.[^.]+$/,'').replace(/\s*\(\d+\)/g,'').trim();
-        return gSlug.includes(matchedKw.toLowerCase());
+function groupIntoBundles(files){
+  const bundles=[];const used=new Set();
+  files.forEach((f,i)=>{
+    if(used.has(i))return;
+    const fSlug=f.name.toLowerCase().replace(/\.[^.]+$/,'').replace(/\s*\(\d+\)/g,'').trim();
+    const kw=BUNDLE_KEYWORDS.find(k=>fSlug.includes(k));
+    if(kw){
+      const grp=files.filter((g,j)=>{
+        if(used.has(j))return false;
+        const gs=g.name.toLowerCase().replace(/\.[^.]+$/,'').replace(/\s*\(\d+\)/g,'').trim();
+        return gs.includes(kw);
       });
-      group.forEach((_,j) => used.add(files.indexOf(group[j])));
-
-      const name = cleanName(matchedKw);
-      bundles.push({
-        name, cat,
-        files: group,
-        primaryId: group[0].id,
-        count: group.length
-      });
-    } else {
+      grp.forEach(g=>used.add(files.indexOf(g)));
+      bundles.push({files:grp,primaryId:grp[0].id,primaryName:grp[0].name,count:grp.length,kw});
+    }else{
       used.add(i);
-      bundles.push({
-        name: cleanName(f.name),
-        cat,
-        files: [f],
-        primaryId: f.id,
-        count: 1
-      });
+      bundles.push({files:[f],primaryId:f.id,primaryName:f.name,count:1,kw:null});
     }
   });
-
   return bundles;
 }
 
-const GEMINI_KEY = 'AIzaSyC_ywFy508ULy1FlTE8qdWvAz1zqWEy8wQ';
-const descCache = {};
-
-async function generateDesc(name, cat, fileCount){
-  const cacheKey = name+'|'+cat;
-  if(descCache[cacheKey]) return descCache[cacheKey];
-  try {
-    const prompt = 'In 1 sentence (max 20 words), write a professional portfolio description for a cybersecurity certificate called "'+name+'" in the "'+cat+'" category'+(fileCount>1?' with '+fileCount+' modules':'')+'. Be specific and natural. No quotes.';
-    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+GEMINI_KEY, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({contents:[{parts:[{text:prompt}]}]})
-    });
-    if(!r.ok) return null;
-    const d = await r.json();
-    const text = d?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    if(text){ descCache[cacheKey]=text; return text; }
-  } catch(e){}
-  return null;
-}
-
-function bundleToCertEntry(bundle){
-  const existing = CERTS_DATA.find(c =>
-    c.category === bundle.cat &&
-    c.name.toLowerCase().includes(bundle.name.toLowerCase().substring(0,8))
-  );
+async function buildCertEntry(bundle, cat){
+  // Try Gemini extraction on the primary file
+  const info = await extractCertInfo(bundle.primaryId, bundle.primaryName, cat);
   const allLinks = bundle.files.map(f=>gdViewUrl(f.id));
+
+  if(info && info.name){
+    return {
+      name: info.name,
+      sub: info.org || cat.charAt(0).toUpperCase()+cat.slice(1),
+      icon: catIcon(cat),
+      tags: info.tags || [cat],
+      desc: info.desc || info.name+' certificate.',
+      date: info.date || new Date().getFullYear().toString(),
+      category: cat,
+      certLink: gdViewUrl(bundle.primaryId),
+      allCertLinks: allLinks,
+      fileCount: bundle.count
+    };
+  }
+  // Fallback to clean filename
   return {
-    name: existing ? existing.name : bundle.name,
-    sub: existing ? existing.sub : bundle.cat.charAt(0).toUpperCase()+bundle.cat.slice(1),
-    icon: existing ? existing.icon : catIcon(bundle.cat),
-    tags: existing ? existing.tags : [bundle.cat],
-    desc: existing ? existing.desc : bundle.name+' certificate'+(bundle.count>1?' ('+bundle.count+' files)':'')+'.',
-    date: existing ? existing.date : new Date().getFullYear().toString(),
-    category: bundle.cat,
+    name: cleanName(bundle.kw || bundle.primaryName),
+    sub: cat.charAt(0).toUpperCase()+cat.slice(1),
+    icon: catIcon(cat),
+    tags: [cat],
+    desc: cleanName(bundle.primaryName)+' certificate'+(bundle.count>1?' ('+bundle.count+' files)':'')+'.',
+    date: new Date().getFullYear().toString(),
+    category: cat,
     certLink: gdViewUrl(bundle.primaryId),
     allCertLinks: allLinks,
-    fileCount: bundle.count,
-    _needsDesc: !existing // flag to generate AI desc
+    fileCount: bundle.count
   };
 }
 
-async function enrichWithAIDescs(certs){
-  // Only generate for certs without existing descriptions (new Drive files)
-  const toEnrich = certs.filter(c=>c._needsDesc);
-  if(toEnrich.length===0) return;
-  // Process in parallel batches of 3 to avoid rate limits
-  for(let i=0; i<toEnrich.length; i+=3){
-    const batch = toEnrich.slice(i,i+3);
-    await Promise.all(batch.map(async cert => {
-      const desc = await generateDesc(cert.name, cert.category, cert.fileCount||1);
-      if(desc) cert.desc = desc;
-      delete cert._needsDesc;
-    }));
+async function buildLabEntry(file){
+  const info = await extractCertInfo(file.id, file.name, 'reports');
+  if(info && info.name){
+    return {name:info.name, org:info.org||'', desc:info.desc||'', date:info.date||'', id:file.id, driveLink:gdViewUrl(file.id)};
   }
+  return {name:cleanName(file.name), org:'', desc:cleanName(file.name)+' report.', date:'', id:file.id, driveLink:gdViewUrl(file.id)};
+}
+
+function renderLabReports(labs){
+  const c = document.getElementById('lab-reports-container');
+  if(!c) return;
+  if(!labs.length){
+    c.innerHTML='<div style="font-family:\'DM Mono\',monospace;font-size:0.65rem;color:var(--text3);padding:12px 0">No lab reports found in Drive.</div>';
+    return;
+  }
+  c.innerHTML = labs.map(l=>`
+    <div style="border-bottom:1px solid rgba(0,229,255,0.08);padding:14px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+      <div>
+        <div style="font-size:0.82rem;font-weight:600;color:var(--cream);margin-bottom:4px">${l.name}</div>
+        ${l.org?`<div style="font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--amber);margin-bottom:6px">${l.org}</div>`:''}
+        <div style="font-size:0.72rem;color:var(--text3);line-height:1.5">${l.desc}</div>
+        ${l.date?`<div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--text3);margin-top:4px">${l.date}</div>`:''}
+      </div>
+      <a href="${l.driveLink}" target="_blank" class="sdw-btn" style="text-decoration:none;padding:5px 12px;font-size:0.65rem;white-space:nowrap;flex-shrink:0">↗ View</a>
+    </div>`).join('');
 }
 
 async function syncCertsFromGitHub(){
   const badge = document.getElementById('gh-sync-badge');
-  const setBadge = (t,c)=>{if(!badge)return;badge.textContent=t;badge.style.color=c;badge.style.opacity='1';};
+  const setBadge=(t,c)=>{if(!badge)return;badge.textContent=t;badge.style.color=c;badge.style.opacity='1';};
   setBadge('Syncing from Drive...','var(--amber)');
 
   let totalFiles=0;
   const freshCerts=[];
 
-  // ── Cert folders ──
+  // ── Process cert folders ──
   for(const [cat,folderId] of Object.entries(GD_FOLDERS)){
     if(cat==='internship-certificates'||cat==='reports') continue;
     const files = await fetchDriveFolder(folderId);
     totalFiles += files.length;
-    const bundles = groupIntoBundles(files, cat);
-    bundles.forEach(b => freshCerts.push(bundleToCertEntry(b)));
+    if(!files.length) continue;
+    const bundles = groupIntoBundles(files);
+    // Process bundles sequentially to avoid rate limiting Gemini
+    for(const b of bundles){
+      const entry = await buildCertEntry(b, cat);
+      freshCerts.push(entry);
+    }
   }
 
   // ── Internship certs → EXP View Cert buttons ──
   const internFiles = await fetchDriveFolder(GD_FOLDERS['internship-certificates']);
   totalFiles += internFiles.length;
   console.log('[Drive] internship files:', internFiles.map(f=>f.name));
-  // Map each intern file to best matching EXP entry by any keyword overlap
-  internFiles.forEach(f => {
+  // Match each file to EXP by extracting info or keyword matching
+  for(const f of internFiles){
+    const info = await extractCertInfo(f.id, f.name, 'internship-certificates');
     const fname = f.name.toLowerCase();
-    // Try to match each EXP entry
-    const matched = EXP.find(exp => {
-      const orgWords = exp.org ? exp.org.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(' ').filter(w=>w.length>3) : [];
-      const titleWords = exp.title.toLowerCase().split(' ').filter(w=>w.length>3);
-      return [...orgWords,...titleWords].some(w=>fname.includes(w));
-    });
-    if(matched) { matched.certLink = gdViewUrl(f.id); console.log('[Drive] intern cert matched:',f.name,'→',matched.title); }
-  });
-  // Fallback: assign by order if still unmatched
-  EXP.forEach((exp,i) => {
-    if(!exp.certLink && internFiles[i]) exp.certLink = gdViewUrl(internFiles[i].id);
-  });
-
-  // ── Resume PDF from reports folder ──
-  const reportFiles = await fetchDriveFolder(GD_FOLDERS['reports']);
-  totalFiles += reportFiles.length;
-  const resumeFile = reportFiles.find(f=>f.name.toLowerCase().includes('resume')||f.name.toLowerCase().includes('cv'));
-  if(resumeFile){
-    const resumePreview = document.getElementById('resume-preview-container');
-    if(resumePreview){
-      resumePreview.innerHTML = '<iframe src="'+gdPreviewUrl(resumeFile.id)+'" style="width:100%;height:100%;border:none;" loading="lazy"></iframe>';
-    }
-    const dlBtn = document.getElementById('resume-dl-btn');
-    if(dlBtn) dlBtn.href = gdViewUrl(resumeFile.id);
+    const matched = EXP.find(exp=>{
+      if(info && info.org){
+        const orgLow = info.org.toLowerCase();
+        return exp.org.toLowerCase().includes(orgLow.split(' ')[0]) || orgLow.includes(exp.org.split('—')[0].trim().toLowerCase().split(' ')[0]);
+      }
+      const orgWords = exp.org.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(' ').filter(w=>w.length>3);
+      return orgWords.some(w=>fname.includes(w));
+    }) || EXP.find((_,i)=>!EXP[i].certLink);
+    if(matched && !matched.certLink) matched.certLink = gdViewUrl(f.id);
   }
 
-  // ── Update CERTS_DATA ──
+  // ── Lab reports → dedicated section ──
+  const reportFiles = await fetchDriveFolder(GD_FOLDERS['reports']);
+  totalFiles += reportFiles.length;
+  const resumeFile = reportFiles.find(f=>/resume|cv/i.test(f.name));
+  const labFiles   = reportFiles.filter(f=>f !== resumeFile);
+
+  if(resumeFile){
+    const rp = document.getElementById('resume-preview-container');
+    if(rp) rp.innerHTML='<iframe src="'+gdPreviewUrl(resumeFile.id)+'" style="width:100%;height:100%;border:none;" loading="lazy"></iframe>';
+    const dl = document.getElementById('resume-dl-btn');
+    if(dl) dl.href = gdViewUrl(resumeFile.id);
+  }
+
+  if(labFiles.length){
+    const labs = [];
+    for(const f of labFiles){
+      const entry = await buildLabEntry(f);
+      labs.push(entry);
+    }
+    renderLabReports(labs);
+  } else {
+    renderLabReports([]);
+  }
+
+  // ── Update CERTS_DATA + re-render ──
   if(freshCerts.length>0){
     CERTS_DATA.length=0;
     freshCerts.forEach(c=>CERTS_DATA.push(c));
@@ -3104,13 +3168,7 @@ async function syncCertsFromGitHub(){
     renderResume();
     const fc=currentCertCat==='all'?[...CERTS_DATA]:CERTS_DATA.filter(c=>c.category===currentCertCat);
     certDial.switchData(fc,()=>{});
-    setBadge(freshCerts.length+' certs from Drive','var(--green)');
-    // Enrich new certs with AI descriptions in background
-    enrichWithAIDescs(freshCerts).then(()=>{
-      // Re-render after AI descriptions are ready
-      const fc2=currentCertCat==='all'?[...CERTS_DATA]:CERTS_DATA.filter(c=>c.category===currentCertCat);
-      certDial.switchData(fc2,()=>{});
-    });
+    setBadge(freshCerts.length+' certs loaded','var(--green)');
   } else {
     setBadge(totalFiles===0?'\u26a0 Drive unreachable':'\u26a0 No certs found','var(--text3)');
   }
