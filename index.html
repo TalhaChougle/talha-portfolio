@@ -1242,8 +1242,9 @@ var EXP_CERTS = [
 ];
 
 var EDU = [
-  {title: "B.Sc. Computer Science", org: "Royal Higher Education Society's College", date: "July 2025 – Present"},
-  {title: "Higher Secondary Certificate", org: "Royal College of Arts, Science & Commerce", date: "May 2022 – May 2024"}
+  {title: "B.Sc. Computer Science", org: "Royal Higher Education Society's College", date: "July 2025 – Present", status: "current", detail: "2nd Year Undergraduate — Specialisation: Cybersecurity & Ethical Hacking"},
+  {title: "Higher Secondary Certificate (Science)", org: "Royal College of Arts, Science & Commerce", date: "May 2022 – May 2024", status: "completed", detail: "Completed with distinction"},
+  {title: "Secondary School Certificate", org: "St. Francis D'Assisi High School", date: "Completed 2022", status: "completed", detail: ""}
 ];
 
 function refreshAllUI() {
@@ -1281,7 +1282,18 @@ function renderResume() {
     </div>`).join('');
   
   const eduC = document.getElementById('edu-container');
-  if(eduC) eduC.innerHTML = EDU.map(e => `<div class="exp-item"><div class="exp-title">${e.title}</div><div class="exp-org">${e.org}</div><div class="exp-date">${e.date}</div></div>`).join('') + `<div class="lang-tags"><span class="ltag">English — Fluent</span><span class="ltag">Hindi — Fluent</span><span class="ltag">Marathi — Good</span><span class="ltag">Konkani — Native</span></div>`;
+  if(eduC) eduC.innerHTML = EDU.map(e => `
+    <div class="exp-item">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div>
+          <div class="exp-title">${e.title}</div>
+          <div class="exp-org">${e.org}</div>
+          <div class="exp-date">${e.date}</div>
+          ${e.detail?`<div style="font-size:0.7rem;color:var(--text3);margin-top:3px;font-style:italic">${e.detail}</div>`:''}
+        </div>
+        ${e.status==='current'?`<span style="font-family:'DM Mono',monospace;font-size:0.58rem;padding:3px 8px;border-radius:50px;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);color:var(--cyan);white-space:nowrap;flex-shrink:0">● Ongoing</span>`:''}
+      </div>
+    </div>`).join('') + `<div class="lang-tags"><span class="ltag">English — Fluent</span><span class="ltag">Hindi — Fluent</span><span class="ltag">Marathi — Good</span><span class="ltag">Konkani — Native</span></div>`;
 }
 
 renderLabs();
@@ -3121,20 +3133,40 @@ async function syncCertsFromGitHub(){
   const internFiles = await fetchDriveFolder(GD_FOLDERS['internship-certificates']);
   totalFiles += internFiles.length;
   console.log('[Drive] internship files:', internFiles.map(f=>f.name));
-  // Match each file to EXP by extracting info or keyword matching
-  for(const f of internFiles){
-    const info = await extractCertInfo(f.id, f.name, 'internship-certificates');
+
+  // Reset all certLinks first
+  EXP.forEach(e=>e.certLink='');
+
+  // Known keyword mapping — matches filenames to internship entries
+  const internKeywords = [
+    {expIndex:0, keywords:['niit','internship certf','772a','cybersecurity with ai']},
+    {expIndex:1, keywords:['stsl','securwires','sab','analyst']}
+  ];
+
+  internFiles.forEach(f => {
     const fname = f.name.toLowerCase();
-    const matched = EXP.find(exp=>{
-      if(info && info.org){
-        const orgLow = info.org.toLowerCase();
-        return exp.org.toLowerCase().includes(orgLow.split(' ')[0]) || orgLow.includes(exp.org.split('—')[0].trim().toLowerCase().split(' ')[0]);
+    for(const map of internKeywords){
+      if(map.keywords.some(k=>fname.includes(k))){
+        if(EXP[map.expIndex]) EXP[map.expIndex].certLink = gdViewUrl(f.id);
+        break;
       }
-      const orgWords = exp.org.toLowerCase().replace(/[^a-z0-9 ]/g,' ').split(' ').filter(w=>w.length>3);
-      return orgWords.some(w=>fname.includes(w));
-    }) || EXP.find((_,i)=>!EXP[i].certLink);
-    if(matched && !matched.certLink) matched.certLink = gdViewUrl(f.id);
-  }
+    }
+  });
+
+  // Fallback: assign remaining files to unmatched EXP entries in order
+  let fallbackIdx=0;
+  EXP.forEach(exp=>{
+    if(!exp.certLink){
+      while(fallbackIdx<internFiles.length){
+        const f=internFiles[fallbackIdx++];
+        exp.certLink=gdViewUrl(f.id);
+        break;
+      }
+    }
+  });
+
+  // Re-render work experience with updated certLinks
+  renderResume();
 
   // ── Lab reports → dedicated section ──
   const reportFiles = await fetchDriveFolder(GD_FOLDERS['reports']);
@@ -3150,12 +3182,24 @@ async function syncCertsFromGitHub(){
   }
 
   if(labFiles.length){
-    const labs = [];
-    for(const f of labFiles){
-      const entry = await buildLabEntry(f);
-      labs.push(entry);
-    }
+    // Show filenames immediately while Gemini processes in background
+    const labs = labFiles.map(f=>({
+      name: cleanName(f.name),
+      org: '',
+      desc: 'Loading description...',
+      date: '',
+      id: f.id,
+      driveLink: gdViewUrl(f.id)
+    }));
     renderLabReports(labs);
+    // Enrich with Gemini in background
+    (async()=>{
+      for(let i=0;i<labs.length;i++){
+        const entry = await buildLabEntry(labFiles[i]);
+        labs[i] = entry;
+      }
+      renderLabReports(labs);
+    })();
   } else {
     renderLabReports([]);
   }
