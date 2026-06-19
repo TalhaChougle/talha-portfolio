@@ -29,6 +29,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;ove
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:#000}
 ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--rust),var(--amber));border-radius:2px}
+.md-detail,.md-list,#bundle-scroll{-webkit-overflow-scrolling:touch;will-change:scroll-position}
 img,canvas,video{max-width:100%}
 
 #hexCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.55}
@@ -527,8 +528,8 @@ footer{position:relative;z-index:1;padding:28px 8vw;border-top:1px solid var(--b
 .sh-tag{font-family:'Chakra Petch',sans-serif!important}
 .exp-title{font-family:'Chakra Petch',sans-serif!important}
 .md-box{display:grid;grid-template-columns:1fr 1fr;gap:0;background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;min-height:580px}
-.md-detail{padding:28px;display:flex;flex-direction:column;gap:14px;border-right:1px solid var(--border);overflow-y:auto;max-height:620px}
-.md-list{overflow-y:auto;max-height:620px;display:flex;flex-direction:column}
+.md-detail{padding:28px;display:flex;flex-direction:column;gap:14px;border-right:1px solid var(--border);overflow-y:auto;max-height:780px;scroll-behavior:smooth}
+.md-list{overflow-y:auto;max-height:780px;display:flex;flex-direction:column;scroll-behavior:smooth}
 .md-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);text-align:center;flex:1;padding:40px}
 .md-item{padding:14px 18px;border-bottom:1px solid rgba(0,229,255,.07);cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:12px}
 .md-item:hover{background:rgba(0,229,255,.05)}
@@ -543,7 +544,7 @@ footer{position:relative;z-index:1;padding:28px 8vw;border-top:1px solid var(--b
 .md-detail-tags{display:flex;flex-wrap:wrap;gap:4px}
 .md-detail-tag{font-size:.55rem;padding:2px 8px;border-radius:50px;background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.15);color:var(--text3);font-family:'DM Mono',monospace}
 .md-detail-desc{font-size:.78rem;color:var(--text2);line-height:1.7}
-.md-detail-preview{width:100%;height:320px;border-radius:10px;overflow:hidden;background:rgba(0,0,0,.4);border:1px solid rgba(0,229,255,.1);flex-shrink:0}
+.md-detail-preview{width:100%;height:420px;border-radius:10px;overflow:hidden;background:rgba(0,0,0,.4);border:1px solid rgba(0,229,255,.1);flex-shrink:0}
 .md-detail-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:4px}
 .cert-mode-btn{font-family:'DM Mono',monospace;font-size:.62rem;padding:6px 14px;border-radius:50px;border:1px solid rgba(0,229,255,.2);background:transparent;color:var(--text3);cursor:pointer;transition:all .2s;white-space:nowrap}
 .cert-mode-btn.active,.cert-mode-btn:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.08)}
@@ -2856,7 +2857,7 @@ function _id(link){return link&&link.includes('drive.google.com')?(link.match(/\
 
 function _iframeFor(link){
   const id=_id(link);
-  if(id) return `<iframe src="https://drive.google.com/file/d/${id}/preview" style="width:100%;height:340px;border:none;display:block" loading="lazy" allow="autoplay"></iframe>`;
+  if(id) return `<iframe src="https://drive.google.com/file/d/${id}/preview" style="width:100%;height:560px;border:none;display:block" loading="lazy" allow="autoplay"></iframe>`;
   if(/\.(jpg|jpeg|png|gif|webp)$/i.test(link||'')) return `<img src="${link}" style="width:100%;max-height:340px;object-fit:contain;display:block"/>`;
   if(link) return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:12px"><span style="font-size:2.5rem">🔗</span><a href="${link}" target="_blank" class="sdw-btn" style="text-decoration:none">↗ Open Link</a></div>`;
   return `<div style="display:flex;align-items:center;justify-content:center;height:180px;color:var(--text3);font-family:'DM Mono',monospace;font-size:.7rem">No preview — add a demo or cert link</div>`;
@@ -2870,7 +2871,7 @@ function _buildPreview(link, bundleFiles){
         <div style="font-family:'DM Mono',monospace;font-size:.58rem;color:var(--text3);padding:4px 0;letter-spacing:1px">MODULE ${i+1} / ${bundleFiles.length}</div>
         <div style="border-radius:8px;overflow:hidden;border:1px solid rgba(0,229,255,.1)">${_iframeFor(l)}</div>
       </div>`).join('');
-    return `<div id="bundle-scroll" style="max-height:400px;overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:rgba(0,229,255,.3) transparent">${frames}</div>
+    return `<div id="bundle-scroll" style="max-height:560px;overflow-y:auto;padding-right:4px;scrollbar-width:thin;scrollbar-color:rgba(0,229,255,.3) transparent;scroll-behavior:smooth">${frames}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;gap:8px">
         <button onclick="shiftBundle(-1)" class="md-nav-btn">← Prev</button>
         <span id="bundle-counter" style="font-family:'DM Mono',monospace;font-size:.82rem;color:var(--text3)">Module 1 / ${bundleFiles.length}</span>
