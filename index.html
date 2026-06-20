@@ -25,11 +25,21 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;overflow-x:hidden}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow-x:hidden;}
+.section{isolation:isolate;}
 ::selection{background:rgba(0,229,255,.25);color:var(--cream)}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:#000}
 ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--rust),var(--amber));border-radius:2px}
-.md-detail,.md-list,#bundle-scroll{-webkit-overflow-scrolling:touch;will-change:scroll-position}
+.md-detail,.md-list,#bundle-scroll{
+  -webkit-overflow-scrolling:touch;
+  will-change:transform;
+  transform:translateZ(0);
+  contain:layout style;
+  isolation:isolate;
+  backface-visibility:hidden;
+}
+.md-list,#bundle-scroll{overscroll-behavior:contain;}
+.md-detail{overscroll-behavior:auto;}
 img,canvas,video{max-width:100%}
 
 #hexCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.55}
@@ -544,7 +554,7 @@ footer{position:relative;z-index:1;padding:28px 8vw;border-top:1px solid var(--b
 .md-detail-tags{display:flex;flex-wrap:wrap;gap:4px}
 .md-detail-tag{font-size:.55rem;padding:2px 8px;border-radius:50px;background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.15);color:var(--text3);font-family:'DM Mono',monospace}
 .md-detail-desc{font-size:.78rem;color:var(--text2);line-height:1.7}
-.md-detail-preview{width:100%;height:420px;border-radius:10px;overflow:hidden;background:rgba(0,0,0,.4);border:1px solid rgba(0,229,255,.1);flex-shrink:0}
+.md-detail-preview{width:100%;height:420px;border-radius:10px;overflow:hidden;background:rgba(0,0,0,.4);border:1px solid rgba(0,229,255,.1);flex-shrink:0;transform:translateZ(0)}
 .md-detail-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:4px}
 .cert-mode-btn{font-family:'DM Mono',monospace;font-size:.62rem;padding:6px 14px;border-radius:50px;border:1px solid rgba(0,229,255,.2);background:transparent;color:var(--text3);cursor:pointer;transition:all .2s;white-space:nowrap}
 .cert-mode-btn.active,.cert-mode-btn:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.08)}
@@ -706,24 +716,24 @@ footer{position:relative;z-index:1;padding:28px 8vw;border-top:1px solid var(--b
   </div>
   <div class="skills-grid">
     <div class="sk rv"><div class="sk-ico">🛡️</div><div class="sk-title">Offensive Security</div>
-      <div class="sk-item"><div class="sk-row"><span class="sk-name">Vulnerability Assessment</span><span class="sk-pct">80%</span></div><div class="sk-bar"><div class="sk-fill" data-w="80"></div></div></div>
-      <div class="sk-item"><div class="sk-row"><span class="sk-name">Penetration Testing</span><span class="sk-pct">70%</span></div><div class="sk-bar"><div class="sk-fill" data-w="70"></div></div></div>
-      <div class="sk-item"><div class="sk-row"><span class="sk-name">Ethical Hacking</span><span class="sk-pct">75%</span></div><div class="sk-bar"><div class="sk-fill" data-w="75"></div></div></div>
+      <div class="sk-item"><div class="sk-row"><span class="sk-name">Vulnerability Assessment</span><span class="sk-pct" data-key="vuln_assess">80%</span></div><div class="sk-bar"><div class="sk-fill" data-w="80" data-key="vuln_assess"></div></div></div>
+      <div class="sk-item"><div class="sk-row"><span class="sk-name">Penetration Testing</span><span class="sk-pct" data-key="pen_test">70%</span></div><div class="sk-bar"><div class="sk-fill" data-w="70" data-key="pen_test"></div></div></div>
+      <div class="sk-item"><div class="sk-row"><span class="sk-name">Ethical Hacking</span><span class="sk-pct" data-key="eth_hack">75%</span></div><div class="sk-bar"><div class="sk-fill" data-w="75" data-key="eth_hack"></div></div></div>
     </div>
     <div class="sk rv2"><div class="sk-ico">💻</div><div class="sk-title">Programming</div>
-      <div class="sk-item"><div class="sk-row"><span class="sk-name">Python</span><span class="sk-pct">78%</span></div><div class="sk-bar"><div class="sk-fill" data-w="78"></div></div></div>
-      <div class="sk-item"><div class="sk-row"><span class="sk-name">JavaScript / HTML / CSS</span><span class="sk-pct">70%</span></div><div class="sk-bar"><div class="sk-fill" data-w="70"></div></div></div>
-      <div class="sk-item"><div class="sk-row"><span class="sk-name">Bash Scripting</span><span class="sk-pct">72%</span></div><div class="sk-bar"><div class="sk-fill" data-w="72"></div></div></div>
+      <div class="sk-item"><div class="sk-row"><span class="sk-name">Python</span><span class="sk-pct" data-key="python">78%</span></div><div class="sk-bar"><div class="sk-fill" data-w="78" data-key="python"></div></div></div>
+      <div class="sk-item"><div class="sk-row"><span class="sk-name">JavaScript / HTML / CSS</span><span class="sk-pct" data-key="js_html">70%</span></div><div class="sk-bar"><div class="sk-fill" data-w="70" data-key="js_html"></div></div></div>
+      <div class="sk-item"><div class="sk-row"><span class="sk-name">Bash Scripting</span><span class="sk-pct" data-key="bash">72%</span></div><div class="sk-bar"><div class="sk-fill" data-w="72" data-key="bash"></div></div></div>
     </div>
     <div class="sk rv3"><div class="sk-ico">🔧</div><div class="sk-title">Security Tools</div>
-      <div class="sk-item"><div class="sk-row"><span class="sk-name">Wireshark / Nmap</span><span class="sk-pct">75%</span></div><div class="sk-bar"><div class="sk-fill" data-w="75"></div></div></div>
-      <div class="sk-item"><div class="sk-row"><span class="sk-name">Burp Suite</span><span class="sk-pct">65%</span></div><div class="sk-bar"><div class="sk-fill" data-w="65"></div></div></div>
-      <div class="sk-item"><div class="sk-row"><span class="sk-name">Cisco Packet Tracer</span><span class="sk-pct">80%</span></div><div class="sk-bar"><div class="sk-fill" data-w="80"></div></div></div>
+      <div class="sk-item"><div class="sk-row"><span class="sk-name">Wireshark / Nmap</span><span class="sk-pct" data-key="wireshark">75%</span></div><div class="sk-bar"><div class="sk-fill" data-w="75" data-key="wireshark"></div></div></div>
+      <div class="sk-item"><div class="sk-row"><span class="sk-name">Burp Suite</span><span class="sk-pct" data-key="burp">65%</span></div><div class="sk-bar"><div class="sk-fill" data-w="65" data-key="burp"></div></div></div>
+      <div class="sk-item"><div class="sk-row"><span class="sk-name">Cisco Packet Tracer</span><span class="sk-pct" data-key="packet_tracer">80%</span></div><div class="sk-bar"><div class="sk-fill" data-w="80" data-key="packet_tracer"></div></div></div>
     </div>
     <div class="sk rv"><div class="sk-ico">🐧</div><div class="sk-title">Systems &amp; Infrastructure</div>
-      <div class="sk-item"><div class="sk-row"><span class="sk-name">Linux / Kali Linux</span><span class="sk-pct">82%</span></div><div class="sk-bar"><div class="sk-fill" data-w="82"></div></div></div>
-      <div class="sk-item"><div class="sk-row"><span class="sk-name">Networking (TCP/IP, DNS)</span><span class="sk-pct">76%</span></div><div class="sk-bar"><div class="sk-fill" data-w="76"></div></div></div>
-      <div class="sk-item"><div class="sk-row"><span class="sk-name">Generative AI Tools</span><span class="sk-pct">70%</span></div><div class="sk-bar"><div class="sk-fill" data-w="70"></div></div></div>
+      <div class="sk-item"><div class="sk-row"><span class="sk-name">Linux / Kali Linux</span><span class="sk-pct" data-key="linux">82%</span></div><div class="sk-bar"><div class="sk-fill" data-w="82" data-key="linux"></div></div></div>
+      <div class="sk-item"><div class="sk-row"><span class="sk-name">Networking (TCP/IP, DNS)</span><span class="sk-pct" data-key="networking">76%</span></div><div class="sk-bar"><div class="sk-fill" data-w="76" data-key="networking"></div></div></div>
+      <div class="sk-item"><div class="sk-row"><span class="sk-name">Generative AI Tools</span><span class="sk-pct" data-key="gen_ai">70%</span></div><div class="sk-bar"><div class="sk-fill" data-w="70" data-key="gen_ai"></div></div></div>
     </div>
   </div>
 </section>
@@ -849,6 +859,7 @@ footer{position:relative;z-index:1;padding:28px 8vw;border-top:1px solid var(--b
     <button class="adm-btn" onclick="openAdminManager('projects')"><span class="adm-bico">🗂️</span>Manage Projects</button>
     <button class="adm-btn" onclick="openAdminManager('certs')"><span class="adm-bico">🏆</span>Manage Certs</button>
     <button class="adm-btn" onclick="openAdminManager('labs')"><span class="adm-bico">🧪</span>Manage Labs</button>
+    <button class="adm-btn" onclick="openSkillsEditor()"><span class="adm-bico">📊</span>Edit Tech Stack</button>
     <div class="adm-div"></div>
     <div class="adm-gl">Manage Resume</div>
     <button class="adm-btn" onclick="openAdminManager('exp')"><span class="adm-bico">💼</span>Work Experience</button>
@@ -1005,6 +1016,20 @@ footer{position:relative;z-index:1;padding:28px 8vw;border-top:1px solid var(--b
 
 <div id="toast"></div>
 
+<!-- ── SKILLS EDITOR MODAL ── -->
+<div class="ov hidden" id="skillsEditorOv" style="z-index:960">
+  <div class="adm-modal" style="max-width:560px;width:95%;max-height:90vh;overflow-y:auto">
+    <div class="adm-mh">
+      <div><div class="adm-title">📊 Edit Tech Stack</div></div>
+      <button class="adm-x" onclick="document.getElementById('skillsEditorOv').classList.add('hidden')">✕</button>
+    </div>
+    <div class="adm-body" id="skillsEditorBody" style="padding:16px 20px;display:flex;flex-direction:column;gap:20px"></div>
+    <div class="adm-footer">
+      <button class="adm-add-btn" onclick="saveSkills()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ FIREBASE CLOUD DATABASE MODULE ═══ -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -1096,20 +1121,9 @@ if(!CanvasRenderingContext2D.prototype.roundRect){
 }
 
 /* ── DATA ── */
-var PROJECTS_CYBER=[
-  {name:"ThreatLens",sub:"Threat Detection",icon:"🔍",tags:["Python","Flask","ML","IEEE Hackathon"],desc:"Real-time phishing URL detector using ML classifiers. Built for NEOFuture Hackathon (IEEE Maharashtra) PS-402 track. 92%+ accuracy on test datasets.",date:"Dec 2025",demo:"",github:""},
-  {name:"DeadCipher",sub:"Cryptography Tool",icon:"🔐",tags:["Python","Crypto","CLI"],desc:"A suite of classical and modern cipher implementations with interactive CLI.",date:"Oct 2025",demo:"",github:""},
-  {name:"Neural-Trace",sub:"Network Visualizer",icon:"🧠",tags:["Python","PyTorch","D3.js"],desc:"AI-powered network forensics tool analysing traffic patterns and detecting anomalies using deep learning.",date:"Nov 2025",demo:"",github:""},
-  {name:"CTF Toolkit",sub:"CTF Automation",icon:"🏁",tags:["Python","Bash","Forensics"],desc:"Personal automation toolkit for CTF competitions with stego detection, hash cracking, and binary analysis.",date:"Jan 2026",demo:"",github:""},
-  {name:"CTF Labs",sub:"Security Research",icon:"🛡️",tags:["React","Docker","CTFd"],desc:"Self-hosted CTF lab environment with custom challenges in web exploitation, binary reversing, and cryptography.",date:"Feb 2026",demo:"",github:""},
-];
+var PROJECTS_CYBER=[];
 
-var PROJECTS_CS=[
-  {name:"BeanCart-AI",sub:"E-Commerce AI",icon:"🛒",tags:["React","FastAPI","Claude API"],desc:"AI-powered shopping assistant for a specialty coffee store. Uses Claude to suggest beans based on taste preferences, brewing methods, and mood — conversational commerce done right.",date:"Jan 2026",demo:"",github:""},
-  {name:"Focus-Task",sub:"Productivity App",icon:"✅",tags:["React","Node.js","MongoDB"],desc:"Minimalist task management with Pomodoro integration. Features smart prioritization, streak tracking, and distraction blocking — designed for deep focus sessions.",date:"Dec 2025",demo:"",github:""},
-  {name:"AgentForge",sub:"AI Agency Platform",icon:"⚙️",tags:["React","Anthropic API","TypeScript"],desc:"Sophisticated single-file React application for AI agent development and agency management, integrating the Anthropic API directly from the frontend with dense compressed architecture.",date:"Feb 2026",demo:"",github:""},
-  {name:"PortfolioV2",sub:"Personal Site",icon:"🌐",tags:["HTML","CSS","JS","Canvas"],desc:"This very portfolio — built from scratch with layered canvas animations, a safe-dial UI, realistic vault mechanics, and a full cybersecurity aesthetic.",date:"Feb 2026",demo:"",github:""},
-];
+var PROJECTS_CS=[];
 
 var PROJECTS=PROJECTS_CYBER;
 
@@ -1718,9 +1732,11 @@ function init3D() {
     camera.position.z = 50;
     camera.position.y = 10;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: 'high-performance' });
+    renderer.setSize(Math.floor(window.innerWidth*0.6), Math.floor(window.innerHeight*0.6));
+    renderer.domElement.style.width='100%';
+    renderer.domElement.style.height='100%';
+    renderer.setPixelRatio(1);
     container.appendChild(renderer.domElement);
 
     const gridColor = new THREE.Color(0x00e5ff);
@@ -1741,7 +1757,7 @@ function init3D() {
     const nodeMaterial = new THREE.MeshBasicMaterial({ color: 0x00e5ff, wireframe: true, transparent: true, opacity: 0.3 });
     const amberMaterial = new THREE.MeshBasicMaterial({ color: 0xffb300, wireframe: true, transparent: true, opacity: 0.5 });
     
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 15; i++) {
         const mesh = new THREE.Mesh(nodeGeometry, Math.random() > 0.8 ? amberMaterial : nodeMaterial);
         mesh.position.set(
             (Math.random() - 0.5) * 400,
@@ -1797,7 +1813,7 @@ function init3D() {
     }
 
     const particlesGeometry = new THREE.BufferGeometry();
-    const particlesCount = 800;
+    const particlesCount = 300;
     const posArray = new Float32Array(particlesCount * 3);
     for(let i=0; i < particlesCount * 3; i+=3) {
         posArray[i] = (Math.random() - 0.5) * 500;
@@ -1844,6 +1860,14 @@ function init3D() {
         }
     });
 
+    let _rayThrottle = 0;
+    function checkGlobeIntersectThrottled(clientX, clientY) {
+        const now = Date.now();
+        if (now - _rayThrottle < 100) return false;
+        _rayThrottle = now;
+        return checkGlobeIntersect(clientX, clientY);
+    }
+
     document.addEventListener('mousemove', (event) => {
         mouseX = (event.clientX - windowHalfX);
         mouseY = (event.clientY - windowHalfY);
@@ -1855,7 +1879,7 @@ function init3D() {
             globeVelocity.x = deltaY * 0.005;
             previousMousePosition = { x: event.clientX, y: event.clientY };
         } else {
-            if (checkGlobeIntersect(event.clientX, event.clientY)) {
+            if (checkGlobeIntersectThrottled(event.clientX, event.clientY)) {
                 document.body.classList.add('hov');
             } else if (event.target.tagName === 'CANVAS' || event.target.id === 'bg-3d') {
                 document.body.classList.remove('hov');
@@ -1885,14 +1909,14 @@ function init3D() {
     document.addEventListener('touchend', () => { isDraggingGlobe = false; });
 
     let scrollY = window.scrollY;
-    window.addEventListener('scroll',()=>{scrollY=window.scrollY;},{passive:true});
+    window.addEventListener('scroll',()=>{ scrollY=window.scrollY; },{passive:true});
 
     const clock = new THREE.Clock();
 
     let _lf=0;
     function animate(ts){
         requestAnimationFrame(animate);
-        if(document.hidden||ts-_lf<16)return;
+        if(document.hidden||ts-_lf<41)return; // ~24fps
         _lf=ts;
         const elapsedTime=clock.getElapsedTime();
 
@@ -1954,7 +1978,7 @@ function init3D() {
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(Math.floor(window.innerWidth*0.6), Math.floor(window.innerHeight*0.6));
     });
 }
 
@@ -2186,6 +2210,74 @@ function showToast(msg, isErr=false) {
     t.style.boxShadow = isErr ? '0 10px 30px rgba(255,68,102,.3)' : '0 10px 30px rgba(0,255,157,.3)';
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* ── SKILLS EDITOR ── */
+const SKILLS_DEF = [
+  {cat:'Offensive Security', ico:'🛡️', items:[
+    {name:'Vulnerability Assessment', key:'vuln_assess'},
+    {name:'Penetration Testing',      key:'pen_test'},
+    {name:'Ethical Hacking',          key:'eth_hack'},
+  ]},
+  {cat:'Programming', ico:'💻', items:[
+    {name:'Python',                   key:'python'},
+    {name:'JavaScript / HTML / CSS',  key:'js_html'},
+    {name:'Bash Scripting',           key:'bash'},
+  ]},
+  {cat:'Security Tools', ico:'🔧', items:[
+    {name:'Wireshark / Nmap',         key:'wireshark'},
+    {name:'Burp Suite',               key:'burp'},
+    {name:'Cisco Packet Tracer',      key:'packet_tracer'},
+  ]},
+  {cat:'Systems & Infrastructure', ico:'🐧', items:[
+    {name:'Linux / Kali Linux',       key:'linux'},
+    {name:'Networking (TCP/IP, DNS)', key:'networking'},
+    {name:'Generative AI Tools',      key:'gen_ai'},
+  ]},
+];
+
+function _getSkillPct(key){
+  const el = document.querySelector(`.sk-fill[data-key="${key}"]`);
+  return el ? parseInt(el.getAttribute('data-w')||'0') : 0;
+}
+
+function openSkillsEditor(){
+  const body = document.getElementById('skillsEditorBody');
+  body.innerHTML = SKILLS_DEF.map(cat=>`
+    <div>
+      <div style="font-family:'Chakra Petch',sans-serif;font-size:.78rem;color:var(--cyan);letter-spacing:.1em;margin-bottom:10px">${cat.ico} ${cat.cat}</div>
+      ${cat.items.map(item=>{
+        const el = document.querySelector(`.sk-fill[data-key="${item.key}"]`);
+        const pct = el ? parseInt(el.getAttribute('data-w')||'0') : 0;
+        return `<div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-family:'DM Mono',monospace;font-size:.75rem;color:var(--text2)">${item.name}</span>
+            <span style="font-family:'DM Mono',monospace;font-size:.75rem;color:var(--amber)" id="sv_${item.key}">${pct}%</span>
+          </div>
+          <input type="range" min="0" max="100" value="${pct}" data-key="${item.key}"
+            style="width:100%;accent-color:var(--cyan);cursor:pointer"
+            oninput="document.getElementById('sv_${item.key}').textContent=this.value+'%'">
+        </div>`;
+      }).join('')}
+    </div>
+  `).join('');
+  document.getElementById('skillsEditorOv').classList.remove('hidden');
+}
+
+function saveSkills(){
+  const sliders = document.querySelectorAll('#skillsEditorBody input[type=range]');
+  sliders.forEach(slider=>{
+    const key = slider.getAttribute('data-key');
+    const val = parseInt(slider.value);
+    // update bar fill
+    const fill = document.querySelector(`.sk-fill[data-key="${key}"]`);
+    if(fill){ fill.setAttribute('data-w', val); fill.style.width = val+'%'; }
+    // update pct label
+    const pct = document.querySelector(`.sk-pct[data-key="${key}"]`);
+    if(pct) pct.textContent = val+'%';
+  });
+  document.getElementById('skillsEditorOv').classList.add('hidden');
+  showToast('Tech stack updated ✓');
 }
 
 let currentAmType = '';
